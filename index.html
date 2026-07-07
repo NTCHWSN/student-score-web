@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหา</a>
+    <main id="main-content" class="app-shell role-shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">ระบบเช็คงานนักเรียน</p>
+          <h1>ระบบเช็คงานและคะแนนนักเรียน</h1>
+        </div>
+      </section>
+
+      <section class="role-grid" aria-label="เลือกโหมดการใช้งาน">
+        <a class="role-card" href="teacher.html" data-page="teacher">
+          <span class="role-icon">ครู</span>
+          <strong>โหมดครู</strong>
+          <span>ดูสรุปคะแนน งานค้าง และรายงาน</span>
+        </a>
+        <a class="role-card" href="student.html" data-page="student">
+          <span class="role-icon">นร.</span>
+          <strong>โหมดนักเรียน</strong>
+          <span>ดูคะแนนและงานค้างของตนเอง</span>
+        </a>
+      </section>
+    </main>
+    <script>
+  window.APP_PAGE = 'index';
+  window.APP_STATIC_FRONTEND = true;
+  window.APP_API_URL = 'https://script.google.com/a/%2A/macros/s/AKfycbwoXFhOOOz2-nSeI3jqxCpyNKcxEQ1h4R4tLColvHDJEI_Ap4RbEH0qJ7IOrJ1Vubbw/exec';
+</script>
+    <script src="script.js"></script>
+  </body>
+</html>
