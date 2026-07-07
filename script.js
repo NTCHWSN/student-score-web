@@ -84,6 +84,7 @@ const state = {
   function initTeacherPage() {
     bindTeacherToolMenu();
     bindClick('teacher-login-button', handleTeacherLogin);
+    bindClick('teacher-logout-button', handleTeacherLogout);
     bindClick('open-teacher-register', openTeacherRegister);
     bindClick('close-teacher-register', closeTeacherRegister);
     bindClick('teacher-register-button', handleTeacherRegister);
@@ -97,6 +98,7 @@ const state = {
     });
     bindClick('sync-students', handleSyncStudents);
     bindClick('download-csv', handleDownloadCsv);
+    bindClick('tenant-download-score-report', handleDownloadCsv);
     bindClick('teacher-score-view-button', () => setTeacherView('score'));
     bindClick('teacher-tools-view-button', () => setTeacherView('tools'));
     bindClick('refresh-access-summary', loadAccessSummary);
@@ -197,6 +199,7 @@ const state = {
 
   function initStudentPage() {
     bindClick('student-login-button', handleStudentLogin);
+    bindClick('student-logout-button', handleStudentLogout);
     bindClick('load-student-login-options', loadStudentLoginClasses);
     bindClick('change-pin-button', handleChangeStudentPin);
     setupStudentLoginSelectors();
@@ -461,6 +464,38 @@ const state = {
     });
   }
 
+  function handleTeacherLogout() {
+    flushVisibleScoreAutosaves();
+    state.teacherToken = '';
+    state.selectedClass = '';
+    state.selectedAssignmentId = '';
+    state.latestClassSummary = null;
+    state.latestSgsExport = null;
+    state.pendingStudentImport = [];
+    state.scanResults = [];
+    sessionStorage.removeItem('teacherToken');
+    handleStopScanCamera();
+    closeTeacherRegister();
+    const teacherApp = byId('teacher-app');
+    if (teacherApp) {
+      teacherApp.classList.add('hidden');
+    }
+    const login = byId('teacher-login');
+    if (login) {
+      login.classList.remove('hidden');
+    }
+    const logoutButton = byId('teacher-logout-button');
+    if (logoutButton) {
+      logoutButton.classList.add('hidden');
+    }
+    const password = byId('teacher-password');
+    if (password) {
+      password.value = '';
+    }
+    setTeacherMessage('ออกจากระบบแล้ว');
+    showTeacherWarning('');
+  }
+
   function handleTeacherRegister() {
     setTeacherRegisterMessage('กำลังสมัครครูใหม่...');
     setBusy('teacher-register-button', true);
@@ -488,6 +523,10 @@ const state = {
     state.teacherMode = dashboard.mode || 'legacy';
     state.teacherClasses = dashboard.classes || [];
     byId('teacher-login').classList.toggle('hidden', true);
+    const logoutButton = byId('teacher-logout-button');
+    if (logoutButton) {
+      logoutButton.classList.remove('hidden');
+    }
     closeTeacherRegister();
     setTeacherView(state.teacherView || 'score');
     byId('teacher-app').classList.toggle('hidden', false);
@@ -2402,13 +2441,18 @@ const state = {
     });
   }
 
-  function handleDownloadCsv() {
-    setBusy('download-csv', true);
+  function handleDownloadCsv(event) {
+    const buttonId = event && event.currentTarget ? event.currentTarget.id : 'download-csv';
+    if (!state.selectedClass) {
+      showTeacherWarning('กรุณาเลือกห้องก่อนโหลดรายงาน');
+      return;
+    }
+    setBusy(buttonId, true);
     serverCall('teacherExportClassCsv', [state.teacherToken, state.selectedClass], (result) => {
-      setBusy('download-csv', false);
+      setBusy(buttonId, false);
       downloadTextFile(result.filename || 'scores.csv', '\ufeff' + (result.csv || ''), 'text/csv;charset=utf-8');
     }, (error) => {
-      setBusy('download-csv', false);
+      setBusy(buttonId, false);
       showTeacherWarning(error.message || String(error));
     });
   }
@@ -2533,10 +2577,37 @@ const state = {
     });
   }
 
+  function handleStudentLogout() {
+    state.studentToken = '';
+    sessionStorage.removeItem('studentToken');
+    const dashboard = byId('student-dashboard');
+    if (dashboard) {
+      dashboard.classList.add('hidden');
+    }
+    const login = byId('student-login');
+    if (login) {
+      login.classList.remove('hidden');
+    }
+    const logoutButton = byId('student-logout-button');
+    if (logoutButton) {
+      logoutButton.classList.add('hidden');
+    }
+    const pin = byId('student-pin');
+    if (pin) {
+      pin.value = '';
+    }
+    setStudentMessage('ออกจากระบบแล้ว');
+    setStudentPinMessage('');
+  }
+
   function renderStudentDashboard(dashboard) {
     const student = dashboard.student;
     byId('student-login').classList.toggle('hidden', true);
     byId('student-dashboard').classList.toggle('hidden', false);
+    const logoutButton = byId('student-logout-button');
+    if (logoutButton) {
+      logoutButton.classList.remove('hidden');
+    }
     byId('student-class-label').textContent = 'ห้อง ' + student.className + ' เลขที่ ' + student.no;
     byId('student-name').textContent = student.name;
     byId('student-grade').textContent = student.estimatedGrade;

@@ -254,6 +254,18 @@
     margin-bottom: 26px;
   }
 
+  .topbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-actions button {
+    min-height: 40px;
+  }
+
   .topbar h1,
   .student-header h2 {
     margin: 0;
@@ -1121,6 +1133,10 @@
       align-items: stretch;
       grid-template-columns: 1fr;
       flex-direction: column;
+    }
+
+    .topbar-actions {
+      justify-content: flex-start;
     }
 
     .score-toolbar {
