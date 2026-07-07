@@ -112,6 +112,26 @@
     color: #ffffff;
   }
 
+  .button-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--line);
+    background: #ffffff;
+    color: #000000;
+    padding: 0 14px;
+    font-family: var(--font-label);
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .button-link:hover {
+    background: #000000;
+    color: #ffffff;
+  }
+
   button:focus-visible,
   a:focus-visible {
     outline: 3px solid #000000;
@@ -386,6 +406,21 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .teacher-tools-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 8px;
+    border: 2px solid var(--line);
+    background: #ffffff;
+    padding: 10px;
+  }
+
+  .teacher-tools-menu button {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 10px;
   }
 
   #teacher-app[data-teacher-view="score"] .teacher-tools-only,
@@ -846,6 +881,76 @@
     padding: 8px 10px;
   }
 
+  .account-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .account-card {
+    border: 2px solid #000000;
+    background: #ffffff;
+    padding: 12px;
+  }
+
+  .account-card[data-status="inactive"] {
+    color: var(--muted-text);
+    background: #f5f5f5;
+  }
+
+  .account-card strong,
+  .account-card span {
+    display: block;
+  }
+
+  .account-card span {
+    font-family: var(--font-label);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .usage-summary {
+    display: grid;
+    gap: 18px;
+  }
+
+  .compact-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .usage-group {
+    display: grid;
+    gap: 8px;
+  }
+
+  .usage-group h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .usage-bar-row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-label);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .usage-bar {
+    height: 14px;
+    border: 1px solid #000000;
+    background: #ffffff;
+  }
+
+  .usage-bar i {
+    display: block;
+    height: 100%;
+    background: #000000;
+  }
+
   .list-item {
     border-bottom: 1px solid var(--line);
     background: #ffffff;
@@ -1020,6 +1125,15 @@
 
     .score-toolbar {
       display: grid;
+    }
+
+    .teacher-page .teacher-tools-menu {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .teacher-page .usage-bar-row {
+      grid-template-columns: 82px minmax(0, 1fr) 32px;
+      font-size: 10px;
     }
 
     .app-shell {

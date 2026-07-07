@@ -53,6 +53,7 @@
           <label for="class-select">ห้องเรียน</label>
           <select id="class-select"></select>
           <button id="refresh-class" type="button">รีเฟรช</button>
+          <a id="selected-class-sheet-link" class="button-link hidden" href="#" target="_blank" rel="noopener">เปิดชีทห้องนี้</a>
         </div>
 
         <div id="teacher-warning" class="notice hidden"></div>
@@ -62,7 +63,19 @@
           <button id="teacher-tools-view-button" type="button" class="button-outline">เครื่องมืออื่น</button>
         </nav>
 
-        <section id="legacy-tools" class="split setup-workspace teacher-tools-only">
+        <nav id="teacher-tools-menu" class="teacher-tools-menu teacher-tools-only" aria-label="เมนูเครื่องมือครู">
+          <button type="button" data-tool-target="classroom">ภาพรวมห้อง</button>
+          <button type="button" data-tool-target="roster" class="tenant-only">ห้องและนักเรียน</button>
+          <button type="button" data-tool-target="system" class="legacy-only">ตั้งค่าระบบ</button>
+          <button type="button" data-tool-target="accounts" class="legacy-only">บัญชีครู</button>
+          <button type="button" data-tool-target="usage" class="legacy-only">การเข้าใช้</button>
+          <button type="button" data-tool-target="pins" class="legacy-only">PIN นักเรียน</button>
+          <button type="button" data-tool-target="reports">รายงาน</button>
+          <button type="button" data-tool-target="sgs">SGS</button>
+          <button type="button" data-tool-target="missing">งานค้าง</button>
+        </nav>
+
+        <section id="legacy-tools" class="tool-panel teacher-tools-only" data-tool-panel="system">
           <div class="panel">
             <h2>ตั้งค่าระบบ</h2>
             <label for="system-app-name">ชื่อระบบ</label>
@@ -78,7 +91,9 @@
             <p class="note-text">สถานะ AI: <strong id="ai-scan-ready">-</strong></p>
             <button id="save-system-settings" type="button">บันทึกการตั้งค่า</button>
           </div>
+        </section>
 
+        <section id="legacy-pin-panel" class="tool-panel teacher-tools-only" data-tool-panel="pins">
           <div class="panel">
             <h2>PIN นักเรียน</h2>
             <p class="note-text">ยังไม่มี PIN: <strong id="missing-pin-count">-</strong> คน</p>
@@ -89,7 +104,48 @@
           </div>
         </section>
 
-        <section id="tenant-tools" class="split setup-workspace teacher-tools-only hidden">
+        <section id="legacy-account-panel" class="tool-panel teacher-tools-only" data-tool-panel="accounts">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>บัญชีครูท่านอื่น</h2>
+              <button id="refresh-teacher-accounts" type="button" class="button-outline">รีเฟรช</button>
+            </div>
+            <div class="split setup-workspace">
+              <div>
+                <label for="admin-teacher-display-name">ชื่อจริง - นามสกุลครู</label>
+                <input id="admin-teacher-display-name" autocomplete="name">
+                <label for="admin-teacher-username">ชื่อผู้ใช้</label>
+                <input id="admin-teacher-username" autocomplete="username">
+                <label for="admin-teacher-password">รหัสผ่าน</label>
+                <input id="admin-teacher-password" type="password" autocomplete="new-password">
+                <button id="admin-create-teacher" type="button">เพิ่มบัญชีครู</button>
+              </div>
+              <div>
+                <label for="admin-selected-teacher">เลือกครู</label>
+                <select id="admin-selected-teacher"></select>
+                <label for="admin-new-teacher-password">รหัสผ่านใหม่</label>
+                <input id="admin-new-teacher-password" type="password" autocomplete="new-password">
+                <div class="button-row">
+                  <button id="admin-set-teacher-password" type="button">เปลี่ยนรหัส</button>
+                  <button id="admin-delete-teacher" type="button" class="button-outline">ลบบัญชี</button>
+                </div>
+              </div>
+            </div>
+            <div id="teacher-account-list" class="account-list"></div>
+          </div>
+        </section>
+
+        <section id="legacy-usage-panel" class="tool-panel teacher-tools-only" data-tool-panel="usage">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>สรุปการเข้าใช้งานเว็บไซต์</h2>
+              <button id="refresh-access-summary" type="button" class="button-outline">โหลดสรุป</button>
+            </div>
+            <div id="access-summary" class="usage-summary"></div>
+          </div>
+        </section>
+
+        <section id="tenant-tools" class="split setup-workspace tool-panel teacher-tools-only hidden" data-tool-panel="roster">
           <div id="tenant-class-panel" class="panel">
             <h2>เพิ่มห้อง/กลุ่มเรียน</h2>
             <label for="tenant-class-name">ชื่อห้อง/กลุ่ม</label>
@@ -120,16 +176,22 @@
               <div id="tenant-student-import-preview" class="import-preview"></div>
             </div>
           </div>
+          <div class="panel">
+            <h2>ชีทประจำห้อง</h2>
+            <p class="note-text">ระบบจะสร้างตารางคะแนนแยกตามครูและห้องให้อัตโนมัติ</p>
+            <a id="tenant-class-sheet-link" class="button-link hidden" href="#" target="_blank" rel="noopener">เปิดชีทของห้องที่เลือก</a>
+            <div id="tenant-class-sheet-list" class="list-block"></div>
+          </div>
         </section>
 
-        <section class="metrics mobile-secondary teacher-tools-only" aria-label="ภาพรวมคะแนน">
+        <section class="metrics mobile-secondary tool-panel teacher-tools-only" data-tool-panel="classroom" aria-label="ภาพรวมคะแนน">
           <div class="metric"><span>นักเรียน</span><strong id="metric-students">-</strong></div>
           <div class="metric"><span>งาน</span><strong id="metric-assignments">-</strong></div>
           <div class="metric"><span>เต็มที่กรอกสูงสุด</span><strong id="metric-max">-</strong></div>
           <div class="metric"><span>เสี่ยงตก</span><strong id="metric-risk">-</strong></div>
         </section>
 
-        <section class="panel teacher-tools-only">
+        <section class="panel tool-panel teacher-tools-only" data-tool-panel="classroom">
           <div class="panel-head">
             <h2>เครื่องมือห้องเรียน</h2>
             <div class="button-row">
@@ -221,7 +283,7 @@
               <button id="add-assignment" type="button">เพิ่มงาน</button>
             </div>
 
-            <div class="panel teacher-tools-only">
+            <div class="panel tool-panel teacher-tools-only" data-tool-panel="classroom">
               <h2>เฉลี่ยคะแนน</h2>
               <div class="scale-grid">
                 <div>
@@ -258,7 +320,7 @@
           </div>
         </section>
 
-        <section class="split mobile-secondary teacher-tools-only">
+        <section class="split mobile-secondary tool-panel teacher-tools-only" data-tool-panel="reports">
           <div class="panel">
             <div class="panel-head">
               <h2>สรุปนักเรียน</h2>
@@ -296,7 +358,7 @@
           </div>
         </section>
 
-        <section class="panel mobile-secondary teacher-tools-only">
+        <section class="panel mobile-secondary tool-panel teacher-tools-only" data-tool-panel="sgs">
           <div class="panel-head">
             <h2>สรุปสำหรับ SGS</h2>
             <div class="button-row">
@@ -308,7 +370,7 @@
           <textarea id="sgs-output" class="sgs-output" rows="10" readonly></textarea>
         </section>
 
-        <section class="split mobile-secondary teacher-tools-only">
+        <section class="split mobile-secondary tool-panel teacher-tools-only" data-tool-panel="missing">
           <div class="panel">
             <h2>งานค้างตามห้อง</h2>
             <div id="missing-list" class="list-block"></div>
@@ -319,7 +381,7 @@
           </div>
         </section>
 
-        <section class="panel mobile-secondary teacher-tools-only">
+        <section class="panel mobile-secondary tool-panel teacher-tools-only" data-tool-panel="missing">
           <div class="panel-head">
             <h2>งานค้างและหมายเหตุรายคน</h2>
             <button id="copy-missing-summary" type="button" class="button-outline">คัดลอกสรุปงานค้าง</button>

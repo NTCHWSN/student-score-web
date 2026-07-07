@@ -16,6 +16,9 @@ const state = {
     studentRosterRequestId: 0,
     teacherMode: 'legacy',
     teacherView: 'score',
+    teacherToolPanel: 'classroom',
+    teacherClasses: [],
+    teacherAccounts: [],
   };
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -79,6 +82,7 @@ const state = {
   }
 
   function initTeacherPage() {
+    bindTeacherToolMenu();
     bindClick('teacher-login-button', handleTeacherLogin);
     bindClick('open-teacher-register', openTeacherRegister);
     bindClick('close-teacher-register', closeTeacherRegister);
@@ -95,6 +99,11 @@ const state = {
     bindClick('download-csv', handleDownloadCsv);
     bindClick('teacher-score-view-button', () => setTeacherView('score'));
     bindClick('teacher-tools-view-button', () => setTeacherView('tools'));
+    bindClick('refresh-access-summary', loadAccessSummary);
+    bindClick('refresh-teacher-accounts', loadTeacherAccounts);
+    bindClick('admin-create-teacher', handleAdminCreateTeacher);
+    bindClick('admin-set-teacher-password', handleAdminSetTeacherPassword);
+    bindClick('admin-delete-teacher', handleAdminDeleteTeacher);
     bindClick('build-sgs-summary', handleBuildSgsSummary);
     bindClick('copy-sgs-summary', handleCopySgsSummary);
     bindClick('download-sgs-csv', handleDownloadSgsCsv);
@@ -158,6 +167,12 @@ const state = {
     if (state.teacherToken) {
       loadTeacherDashboard();
     }
+  }
+
+  function bindTeacherToolMenu() {
+    document.querySelectorAll('#teacher-tools-menu [data-tool-target]').forEach((button) => {
+      button.addEventListener('click', () => setTeacherToolPanel(button.dataset.toolTarget || 'classroom'));
+    });
   }
 
   function openTeacherRegister() {
@@ -471,39 +486,35 @@ const state = {
 
   function renderTeacherDashboard(dashboard) {
     state.teacherMode = dashboard.mode || 'legacy';
+    state.teacherClasses = dashboard.classes || [];
     byId('teacher-login').classList.toggle('hidden', true);
     closeTeacherRegister();
     setTeacherView(state.teacherView || 'score');
     byId('teacher-app').classList.toggle('hidden', false);
-    const tenantTools = byId('tenant-tools');
-    if (tenantTools) {
-      tenantTools.classList.toggle('hidden', false);
-    }
-    const tenantClassPanel = byId('tenant-class-panel');
-    if (tenantClassPanel) {
-      tenantClassPanel.classList.toggle('hidden', state.teacherMode !== 'tenant');
-    }
-    const legacyTools = byId('legacy-tools');
-    if (legacyTools) {
-      legacyTools.classList.toggle('hidden', state.teacherMode === 'tenant');
-    }
+    updateTeacherModeVisibility();
     const syncButton = byId('sync-students');
     if (syncButton) {
       syncButton.classList.toggle('hidden', state.teacherMode === 'tenant');
     }
     const select = byId('class-select');
     select.innerHTML = '';
-    dashboard.classes.forEach((item) => {
+    state.teacherClasses.forEach((item) => {
       const option = document.createElement('option');
       option.value = item.className;
-      option.textContent = item.className;
+      option.textContent = item.subject ? item.className + ' — ' + item.subject : item.className;
       select.appendChild(option);
     });
     state.selectedClass = select.value;
+    renderTenantClassSheetLinks();
+    updateSelectedClassSheetLink();
     if (dashboard.settings && dashboard.settings.teacherPasswordDefault) {
       showTeacherWarning('กรุณาเปลี่ยนรหัสครูในแผงตั้งค่าระบบก่อนใช้งานจริง');
     }
     renderSystemSettings(dashboard.settings || {});
+    if (state.teacherMode === 'legacy') {
+      loadTeacherAccounts();
+      loadAccessSummary();
+    }
     if (state.selectedClass) {
       loadSelectedClass();
     } else {
@@ -530,6 +541,42 @@ const state = {
       toolsButton.classList.toggle('button-outline', nextView !== 'tools');
       toolsButton.setAttribute('aria-current', nextView === 'tools' ? 'page' : 'false');
     }
+    setTeacherToolPanel(state.teacherToolPanel || (state.teacherMode === 'tenant' ? 'roster' : 'classroom'));
+  }
+
+  function setTeacherToolPanel(panel) {
+    const nextPanel = normalizeTeacherToolPanel(panel);
+    state.teacherToolPanel = nextPanel;
+    document.querySelectorAll('#teacher-tools-menu [data-tool-target]').forEach((button) => {
+      const active = button.dataset.toolTarget === nextPanel;
+      button.classList.toggle('button-outline', !active);
+      button.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+    document.querySelectorAll('.tool-panel').forEach((panelElement) => {
+      panelElement.classList.toggle('hidden', panelElement.dataset.toolPanel !== nextPanel);
+    });
+    updateTeacherModeVisibility();
+  }
+
+  function normalizeTeacherToolPanel(panel) {
+    const legacyOnly = ['system', 'accounts', 'usage', 'pins'];
+    const tenantOnly = ['roster'];
+    if (state.teacherMode === 'tenant' && legacyOnly.indexOf(panel) !== -1) {
+      return 'roster';
+    }
+    if (state.teacherMode !== 'tenant' && tenantOnly.indexOf(panel) !== -1) {
+      return 'classroom';
+    }
+    return panel || 'classroom';
+  }
+
+  function updateTeacherModeVisibility() {
+    document.querySelectorAll('.legacy-only').forEach((element) => {
+      element.classList.toggle('hidden', state.teacherMode === 'tenant');
+    });
+    document.querySelectorAll('.tenant-only').forEach((element) => {
+      element.classList.toggle('hidden', state.teacherMode !== 'tenant');
+    });
   }
 
   function renderEmptyClassState() {
@@ -581,6 +628,162 @@ const state = {
     }
   }
 
+  function loadTeacherAccounts() {
+    if (state.teacherMode === 'tenant' || !state.teacherToken) {
+      return;
+    }
+    serverCall('teacherAdminListTeachers', [state.teacherToken], (result) => {
+      state.teacherAccounts = result.accounts || [];
+      renderTeacherAccounts(state.teacherAccounts);
+    }, showTeacherWarning);
+  }
+
+  function renderTeacherAccounts(accounts) {
+    const select = byId('admin-selected-teacher');
+    if (select) {
+      select.innerHTML = '';
+      addOption(select, '', accounts && accounts.length ? 'เลือกบัญชีครู' : 'ยังไม่มีบัญชีครู');
+      (accounts || []).forEach((account) => {
+        addOption(
+          select,
+          account.teacherId,
+          (account.displayName || account.username) + ' (' + account.username + ')'
+        );
+      });
+    }
+
+    const container = byId('teacher-account-list');
+    if (!container) {
+      return;
+    }
+    if (!accounts || accounts.length === 0) {
+      container.innerHTML = '<div class="list-item">ยังไม่มีบัญชีครูท่านอื่น</div>';
+      return;
+    }
+    container.innerHTML = accounts.map((account) => [
+      '<article class="account-card" data-status="' + escapeHtml(account.status || 'active') + '">',
+      '<strong>' + escapeHtml(account.displayName || account.username) + '</strong>',
+      '<span>Username: ' + escapeHtml(account.username) + '</span>',
+      '<span>สถานะ: ' + escapeHtml(account.status || 'active') + '</span>',
+      '<span>ห้อง ' + (account.classCount || 0) + ' | นักเรียน ' + (account.studentCount || 0) + '</span>',
+      '</article>',
+    ].join('')).join('');
+  }
+
+  function handleAdminCreateTeacher() {
+    const payload = {
+      displayName: byId('admin-teacher-display-name').value.trim(),
+      username: byId('admin-teacher-username').value.trim(),
+      password: byId('admin-teacher-password').value.trim(),
+    };
+    setBusy('admin-create-teacher', true);
+    showTeacherWarning('กำลังเพิ่มบัญชีครู...');
+    serverCall('teacherAdminCreateTeacher', [state.teacherToken, payload], (result) => {
+      setBusy('admin-create-teacher', false);
+      byId('admin-teacher-display-name').value = '';
+      byId('admin-teacher-username').value = '';
+      byId('admin-teacher-password').value = '';
+      state.teacherAccounts = result.accounts || [];
+      renderTeacherAccounts(state.teacherAccounts);
+      showTeacherWarning(result.message || 'เพิ่มบัญชีครูแล้ว');
+    }, (error) => {
+      setBusy('admin-create-teacher', false);
+      showTeacherWarning(error.message || String(error));
+    });
+  }
+
+  function handleAdminSetTeacherPassword() {
+    const teacherId = byId('admin-selected-teacher').value;
+    const password = byId('admin-new-teacher-password').value.trim();
+    if (!teacherId) {
+      showTeacherWarning('กรุณาเลือกบัญชีครูก่อน');
+      return;
+    }
+    setBusy('admin-set-teacher-password', true);
+    showTeacherWarning('กำลังเปลี่ยนรหัสผ่านครู...');
+    serverCall('teacherAdminSetTeacherPassword', [state.teacherToken, teacherId, password], (result) => {
+      setBusy('admin-set-teacher-password', false);
+      byId('admin-new-teacher-password').value = '';
+      state.teacherAccounts = result.accounts || [];
+      renderTeacherAccounts(state.teacherAccounts);
+      showTeacherWarning(result.message || 'เปลี่ยนรหัสผ่านครูแล้ว');
+    }, (error) => {
+      setBusy('admin-set-teacher-password', false);
+      showTeacherWarning(error.message || String(error));
+    });
+  }
+
+  function handleAdminDeleteTeacher() {
+    const teacherId = byId('admin-selected-teacher').value;
+    if (!teacherId) {
+      showTeacherWarning('กรุณาเลือกบัญชีครูก่อน');
+      return;
+    }
+    if (!window.confirm('ยืนยันลบบัญชีครูนี้หรือไม่ ข้อมูลคะแนนเดิมจะยังเก็บไว้')) {
+      return;
+    }
+    setBusy('admin-delete-teacher', true);
+    showTeacherWarning('กำลังปิดบัญชีครู...');
+    serverCall('teacherAdminDeleteTeacher', [state.teacherToken, teacherId], (result) => {
+      setBusy('admin-delete-teacher', false);
+      state.teacherAccounts = result.accounts || [];
+      renderTeacherAccounts(state.teacherAccounts);
+      showTeacherWarning(result.message || 'ปิดบัญชีครูแล้ว');
+    }, (error) => {
+      setBusy('admin-delete-teacher', false);
+      showTeacherWarning(error.message || String(error));
+    });
+  }
+
+  function loadAccessSummary() {
+    if (state.teacherMode === 'tenant' || !state.teacherToken) {
+      return;
+    }
+    const container = byId('access-summary');
+    if (container) {
+      container.innerHTML = '<div class="list-item">กำลังโหลดสรุป...</div>';
+    }
+    serverCall('teacherGetAccessUsageSummary', [state.teacherToken], renderAccessSummary, showTeacherWarning);
+  }
+
+  function renderAccessSummary(summary) {
+    const container = byId('access-summary');
+    if (!container) {
+      return;
+    }
+    container.innerHTML = [
+      '<div class="metrics compact-metrics">',
+      '<div class="metric"><span>ทั้งหมด</span><strong>' + (summary.total || 0) + '</strong></div>',
+      '<div class="metric"><span>วันนี้</span><strong>' + getLastBucketCount(summary.daily) + '</strong></div>',
+      '<div class="metric"><span>เดือนนี้</span><strong>' + getLastBucketCount(summary.monthly) + '</strong></div>',
+      '<div class="metric"><span>ปีนี้</span><strong>' + getLastBucketCount(summary.yearly) + '</strong></div>',
+      '</div>',
+      renderUsageBars('รายวัน', summary.daily || []),
+      renderUsageBars('รายเดือน', summary.monthly || []),
+      renderUsageBars('รายปี', summary.yearly || []),
+      renderUsageBars('บทบาทผู้ใช้', summary.byRole || []),
+    ].join('');
+  }
+
+  function renderUsageBars(title, rows) {
+    const max = Math.max.apply(null, (rows || []).map((row) => row.count || 0).concat([1]));
+    const bars = (rows || []).map((row) => {
+      const width = Math.max(4, Math.round(((row.count || 0) / max) * 100));
+      return [
+        '<div class="usage-bar-row">',
+        '<span>' + escapeHtml(row.label) + '</span>',
+        '<div class="usage-bar"><i style="width:' + width + '%"></i></div>',
+        '<strong>' + (row.count || 0) + '</strong>',
+        '</div>',
+      ].join('');
+    }).join('');
+    return '<section class="usage-group"><h3>' + escapeHtml(title) + '</h3>' + (bars || '<div class="list-item">ยังไม่มีข้อมูล</div>') + '</section>';
+  }
+
+  function getLastBucketCount(rows) {
+    return rows && rows.length ? rows[rows.length - 1].count || 0 : 0;
+  }
+
   function loadSelectedClass() {
     const className = byId('class-select').value;
     if (!className) {
@@ -589,6 +792,7 @@ const state = {
       return;
     }
     state.selectedClass = className;
+    updateSelectedClassSheetLink();
     setBusy('refresh-class', true);
     serverCall('teacherGetClassSummary', [state.teacherToken, className], (result) => {
       setBusy('refresh-class', false);
@@ -598,6 +802,44 @@ const state = {
       setBusy('refresh-class', false);
       showTeacherWarning(error.message || String(error));
     });
+  }
+
+  function getSelectedClassInfo() {
+    return (state.teacherClasses || []).filter((item) => item.className === state.selectedClass)[0] || null;
+  }
+
+  function updateSelectedClassSheetLink() {
+    const info = getSelectedClassInfo();
+    const url = info && info.sheetUrl ? info.sheetUrl : '';
+    ['selected-class-sheet-link', 'tenant-class-sheet-link'].forEach((id) => {
+      const link = byId(id);
+      if (!link) {
+        return;
+      }
+      link.classList.toggle('hidden', !url || state.teacherMode !== 'tenant');
+      if (url) {
+        link.href = url;
+      }
+    });
+  }
+
+  function renderTenantClassSheetLinks() {
+    const container = byId('tenant-class-sheet-list');
+    if (!container) {
+      return;
+    }
+    const classes = (state.teacherClasses || []).filter((item) => item.sheetUrl);
+    if (state.teacherMode !== 'tenant' || classes.length === 0) {
+      container.innerHTML = '<div class="list-item">ยังไม่มีชีทห้องเรียน</div>';
+      return;
+    }
+    container.innerHTML = classes.map((item) => [
+      '<div class="list-item">',
+      '<strong>' + escapeHtml(item.className) + '</strong>',
+      '<span>' + escapeHtml(item.subject || item.sheetName || '') + '</span>',
+      '<a href="' + escapeHtml(item.sheetUrl) + '" target="_blank" rel="noopener">เปิดชีท</a>',
+      '</div>',
+    ].join('')).join('');
   }
 
   function handleTenantCreateClass() {
