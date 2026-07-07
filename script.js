@@ -1388,12 +1388,13 @@ const state = {
       nicknameInput.dataset.studentNo = student.no;
       nicknameInput.dataset.lastSavedValue = student.nickname || '';
       nicknameInput.value = student.nickname || '';
-      nicknameInput.placeholder = 'ครูเห็นคนเดียว';
+      nicknameInput.placeholder = 'ชื่อเล่น';
+      nicknameInput.title = 'ชื่อเล่นส่วนตัวของครู';
       nicknameInput.addEventListener('keydown', handleStudentNicknameKeydown);
       nicknameInput.addEventListener('blur', (event) => saveStudentNicknameInput(event.currentTarget, true));
       const nicknameStatus = document.createElement('span');
       nicknameStatus.className = 'nickname-save-status';
-      nicknameStatus.textContent = 'ส่วนตัว';
+      nicknameStatus.textContent = '';
       nicknameLabel.appendChild(nicknameCaption);
       nicknameLabel.appendChild(nicknameInput);
       nicknameLabel.appendChild(nicknameStatus);
@@ -1566,7 +1567,7 @@ const state = {
     const className = state.selectedClass;
     const sequence = Number(input.dataset.saveSequence || 0) + 1;
     input.dataset.saveSequence = String(sequence);
-    setStudentNicknameStatus(input, 'saving', 'กำลังบันทึก...');
+    setStudentNicknameStatus(input, 'saving', '...');
 
     serverCall('teacherSaveStudentNickname', [state.teacherToken, className, studentNo, currentValue], (result) => {
       if (String(input.dataset.saveSequence || '') !== String(sequence)) {
@@ -1574,14 +1575,14 @@ const state = {
       }
 
       input.dataset.lastSavedValue = currentValue;
-      setStudentNicknameStatus(input, 'saved', currentValue ? 'บันทึกแล้ว' : 'ล้างแล้ว');
+      setStudentNicknameStatus(input, 'saved', '✓');
       updateLatestSummaryAfterStudentNickname(result, studentNo, currentValue);
     }, (error) => {
       if (String(input.dataset.saveSequence || '') !== String(sequence)) {
         return;
       }
 
-      setStudentNicknameStatus(input, 'error', 'ยังไม่บันทึก');
+      setStudentNicknameStatus(input, 'error', '!');
       showTeacherWarning((error && error.message) || String(error));
     });
   }
@@ -1595,6 +1596,20 @@ const state = {
 
     field.dataset.saveStatus = status || 'idle';
     statusBox.textContent = text || '';
+    statusBox.title = getStudentNicknameStatusTitle(status);
+  }
+
+  function getStudentNicknameStatusTitle(status) {
+    if (status === 'saving') {
+      return 'กำลังบันทึกชื่อเล่น';
+    }
+    if (status === 'saved') {
+      return 'บันทึกชื่อเล่นแล้ว';
+    }
+    if (status === 'error') {
+      return 'ยังไม่บันทึกชื่อเล่น';
+    }
+    return '';
   }
 
   function updateLatestSummaryAfterAutosave(result) {

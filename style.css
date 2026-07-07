@@ -604,13 +604,17 @@
   }
 
   .teacher-student-name-cell {
-    display: grid;
+    align-items: center;
+    display: flex;
     gap: 8px;
+    min-width: 0;
   }
 
   .student-full-name {
     display: inline-block;
+    flex: 1 1 auto;
     font-weight: 900;
+    min-width: 0;
   }
 
   .teacher-nickname-chip {
@@ -629,41 +633,60 @@
   }
 
   .nickname-field {
-    display: grid;
-    grid-template-columns: auto minmax(96px, 1fr) auto;
     align-items: center;
-    gap: 6px;
+    display: inline-grid;
+    flex: 0 0 auto;
+    grid-template-columns: 86px 16px;
+    gap: 4px;
     margin: 0;
   }
 
-  .nickname-field span:first-child,
+  .nickname-field span:first-child {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
   .nickname-save-status {
     color: var(--muted-text);
     font-family: var(--font-label);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 900;
     line-height: 1;
+    min-width: 12px;
+    opacity: 0;
+    text-align: center;
   }
 
   .student-nickname-input {
-    min-height: 34px;
-    border-width: 2px;
-    padding: 6px 8px;
-    font-size: 0.9rem;
+    min-height: 28px;
+    width: 86px;
+    border-width: 1px;
+    padding: 3px 6px;
+    font-family: var(--font-label);
+    font-size: 0.78rem;
+    font-weight: 800;
   }
 
   .nickname-field[data-save-status="saving"] .nickname-save-status {
     color: #000000;
+    opacity: 1;
   }
 
   .nickname-field[data-save-status="saved"] .nickname-save-status {
     color: #167f3a;
+    opacity: 1;
   }
 
   .nickname-field[data-save-status="error"] .nickname-save-status {
     background: #000000;
     color: #ffffff;
-    padding: 4px 6px;
+    opacity: 1;
+    padding: 3px 4px;
   }
 
   .scan-panel {
@@ -1188,9 +1211,26 @@
       font-size: 10px;
     }
 
+    .teacher-page .teacher-student-name-cell {
+      align-items: center;
+      gap: 5px;
+    }
+
     .teacher-page .nickname-field {
-      grid-template-columns: 1fr;
-      gap: 4px;
+      grid-template-columns: 62px 12px;
+      gap: 2px;
+    }
+
+    .teacher-page .student-nickname-input {
+      width: 62px;
+      min-height: 28px;
+      padding: 3px 4px;
+      font-size: 11px;
+    }
+
+    .teacher-page .nickname-save-status {
+      min-width: 10px;
+      font-size: 10px;
     }
 
     .teacher-page .teacher-nickname-chip {
