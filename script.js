@@ -598,7 +598,7 @@ const state = {
   }
 
   function normalizeTeacherToolPanel(panel) {
-    const legacyOnly = ['system', 'accounts', 'usage', 'pins'];
+    const legacyOnly = ['system', 'accounts', 'usage'];
     const tenantOnly = ['roster'];
     if (state.teacherMode === 'tenant' && legacyOnly.indexOf(panel) !== -1) {
       return 'roster';

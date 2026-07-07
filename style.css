@@ -1200,17 +1200,6 @@
   }
 
   @media (max-width: 720px) {
-    .teacher-page .mobile-secondary,
-    .teacher-page #legacy-tools,
-    .teacher-page #tenant-tools,
-    .teacher-page .teacher-view-nav,
-    .teacher-page #refresh-class,
-    .teacher-page #sync-students,
-    .teacher-page #download-csv,
-    .teacher-page #save-score-grid {
-      display: none !important;
-    }
-
     .teacher-page .app-shell {
       width: 100%;
       padding: 12px 8px 28px;
@@ -1234,6 +1223,42 @@
       border: 2px solid #000000;
       background: #ffffff;
       padding: 10px;
+    }
+
+    .teacher-page .teacher-view-nav {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      position: sticky;
+      top: 74px;
+      z-index: 7;
+      border: 2px solid #000000;
+      background: #ffffff;
+      padding: 8px;
+      margin: 10px 0;
+    }
+
+    .teacher-page .teacher-view-nav button,
+    .teacher-page .teacher-tools-menu button {
+      min-height: 52px;
+      padding: 0 8px;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .teacher-page .teacher-tools-menu {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      position: sticky;
+      top: 146px;
+      z-index: 6;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    .teacher-page #legacy-tools,
+    .teacher-page #tenant-tools {
+      display: grid;
     }
 
     .teacher-page .score-workspace,
@@ -1372,6 +1397,10 @@
       display: block !important;
       margin-top: 14px;
       padding-top: 14px;
+    }
+
+    #teacher-app[data-teacher-view="tools"] .scan-panel {
+      display: none !important;
     }
 
     #teacher-app[data-teacher-view="score"] .scan-mobile-keep {
