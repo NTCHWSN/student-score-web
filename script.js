@@ -1031,7 +1031,7 @@ const state = {
       const row = document.createElement('tr');
       row.innerHTML = [
         td(student.no),
-        td(student.name),
+        td(renderTeacherStudentName(student), true),
         td(formatValue(student.totalScore)),
         td(formatPercent(student.percent)),
         td(student.estimatedGrade),
@@ -1045,11 +1045,11 @@ const state = {
     });
 
     renderList('missing-list', result.missing.students, (student) =>
-      '<strong>เลขที่ ' + escapeHtml(student.no) + ' ' + escapeHtml(student.name) + '</strong><span>ค้าง ' +
+      '<strong>เลขที่ ' + escapeHtml(student.no) + ' ' + renderTeacherStudentName(student) + '</strong><span>ค้าง ' +
       student.missingCount + ' งาน</span>'
     );
     renderList('risk-list', result.atRisk, (student) =>
-      '<strong>เลขที่ ' + escapeHtml(student.no) + ' ' + escapeHtml(student.name) + '</strong><span>' +
+      '<strong>เลขที่ ' + escapeHtml(student.no) + ' ' + renderTeacherStudentName(student) + '</strong><span>' +
       formatPercent(student.percent) + ' เกรด ' + escapeHtml(student.estimatedGrade) + '</span>'
     );
     renderMissingDetailList(summary.students || []);
@@ -1079,7 +1079,7 @@ const state = {
         : '<p class="note-text">ไม่มีงานค้าง</p>';
       card.innerHTML = [
         '<div class="missing-detail-head">',
-        '<div><strong>เลขที่ ' + escapeHtml(student.no) + ' ' + escapeHtml(student.name) + '</strong>',
+        '<div><strong>เลขที่ ' + escapeHtml(student.no) + ' ' + renderTeacherStudentName(student) + '</strong>',
         '<span>' + (missingAssignments.length > 0 ? 'ค้าง ' + missingAssignments.length + ' งาน' : 'ไม่มีงานค้าง') + '</span></div>',
         '</div>',
         '<div class="missing-detail-work">',
@@ -1094,6 +1094,16 @@ const state = {
       ].join('');
       container.appendChild(card);
     });
+  }
+
+  function renderTeacherStudentName(student) {
+    const nickname = String(student && student.nickname || '').trim();
+    return [
+      '<span class="student-full-name">',
+      escapeHtml(student && student.name || ''),
+      '</span>',
+      nickname ? '<span class="teacher-nickname-chip">ชื่อเล่น: ' + escapeHtml(nickname) + '</span>' : '',
+    ].join('');
   }
 
   function handleMissingDetailClick(event) {
@@ -1361,7 +1371,35 @@ const state = {
     summary.students.forEach((student) => {
       const score = getStudentScore(student, assignment.assignmentId);
       const row = document.createElement('tr');
-      row.innerHTML = [td(student.no), td(student.name), '<td></td>'].join('');
+      row.innerHTML = [td(student.no), '<td></td>', '<td></td>'].join('');
+
+      const nameCell = row.children[1];
+      const nameWrap = document.createElement('div');
+      nameWrap.className = 'teacher-student-name-cell';
+      const fullName = document.createElement('strong');
+      fullName.className = 'student-full-name';
+      fullName.textContent = student.name;
+      const nicknameLabel = document.createElement('label');
+      nicknameLabel.className = 'nickname-field';
+      const nicknameCaption = document.createElement('span');
+      nicknameCaption.textContent = 'ชื่อเล่น';
+      const nicknameInput = document.createElement('input');
+      nicknameInput.className = 'student-nickname-input';
+      nicknameInput.dataset.studentNo = student.no;
+      nicknameInput.dataset.lastSavedValue = student.nickname || '';
+      nicknameInput.value = student.nickname || '';
+      nicknameInput.placeholder = 'ครูเห็นคนเดียว';
+      nicknameInput.addEventListener('keydown', handleStudentNicknameKeydown);
+      nicknameInput.addEventListener('blur', (event) => saveStudentNicknameInput(event.currentTarget, true));
+      const nicknameStatus = document.createElement('span');
+      nicknameStatus.className = 'nickname-save-status';
+      nicknameStatus.textContent = 'ส่วนตัว';
+      nicknameLabel.appendChild(nicknameCaption);
+      nicknameLabel.appendChild(nicknameInput);
+      nicknameLabel.appendChild(nicknameStatus);
+      nameWrap.appendChild(fullName);
+      nameWrap.appendChild(nicknameLabel);
+      nameCell.appendChild(nameWrap);
 
       const input = document.createElement('input');
       input.className = 'score-input';
@@ -1398,7 +1436,7 @@ const state = {
   }
 
   function flushVisibleScoreAutosaves() {
-    Array.from(document.querySelectorAll('#score-entry-body input')).forEach((input) => {
+    Array.from(document.querySelectorAll('#score-entry-body .score-input')).forEach((input) => {
       saveScoreInput(input, true);
     });
   }
@@ -1494,6 +1532,71 @@ const state = {
     statusBox.textContent = text || '';
   }
 
+  function handleStudentNicknameKeydown(event) {
+    const input = event.currentTarget;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const row = input.closest('tr');
+      const scoreInput = row ? row.querySelector('.score-input') : null;
+      if (scoreInput) {
+        scoreInput.focus();
+        scoreInput.select();
+      } else {
+        input.blur();
+      }
+    }
+  }
+
+  function saveStudentNicknameInput(input, force) {
+    if (!input || !state.selectedClass) {
+      return;
+    }
+
+    const studentNo = input.dataset.studentNo || '';
+    const currentValue = String(input.value || '').trim();
+    const lastSavedValue = String(input.dataset.lastSavedValue || '').trim();
+    if (!force && currentValue === lastSavedValue) {
+      return;
+    }
+    if (currentValue === lastSavedValue) {
+      setStudentNicknameStatus(input, 'idle', 'บันทึกแล้ว');
+      return;
+    }
+
+    const className = state.selectedClass;
+    const sequence = Number(input.dataset.saveSequence || 0) + 1;
+    input.dataset.saveSequence = String(sequence);
+    setStudentNicknameStatus(input, 'saving', 'กำลังบันทึก...');
+
+    serverCall('teacherSaveStudentNickname', [state.teacherToken, className, studentNo, currentValue], (result) => {
+      if (String(input.dataset.saveSequence || '') !== String(sequence)) {
+        return;
+      }
+
+      input.dataset.lastSavedValue = currentValue;
+      setStudentNicknameStatus(input, 'saved', currentValue ? 'บันทึกแล้ว' : 'ล้างแล้ว');
+      updateLatestSummaryAfterStudentNickname(result, studentNo, currentValue);
+    }, (error) => {
+      if (String(input.dataset.saveSequence || '') !== String(sequence)) {
+        return;
+      }
+
+      setStudentNicknameStatus(input, 'error', 'ยังไม่บันทึก');
+      showTeacherWarning((error && error.message) || String(error));
+    });
+  }
+
+  function setStudentNicknameStatus(input, status, text) {
+    const field = input ? input.closest('.nickname-field') : null;
+    const statusBox = field ? field.querySelector('.nickname-save-status') : null;
+    if (!field || !statusBox) {
+      return;
+    }
+
+    field.dataset.saveStatus = status || 'idle';
+    statusBox.textContent = text || '';
+  }
+
   function updateLatestSummaryAfterAutosave(result) {
     if (!result || !result.summary || !state.latestClassSummary) {
       return;
@@ -1506,12 +1609,30 @@ const state = {
     }
   }
 
+  function updateLatestSummaryAfterStudentNickname(result, studentNo, nickname) {
+    if (result && result.summary && state.latestClassSummary) {
+      state.latestClassSummary.summary = result.summary;
+      state.latestClassSummary.missing = result.missing || state.latestClassSummary.missing;
+      state.latestClassSummary.atRisk = result.atRisk || state.latestClassSummary.atRisk;
+      return;
+    }
+
+    const students = state.latestClassSummary && state.latestClassSummary.summary
+      ? state.latestClassSummary.summary.students || []
+      : [];
+    students.forEach((student) => {
+      if (String(student.no || '') === String(studentNo || '')) {
+        student.nickname = nickname;
+      }
+    });
+  }
+
   function handleScoreInputNavigation(event) {
     if (event.key !== 'Enter' && event.key !== 'Tab') {
       return;
     }
 
-    const inputs = Array.from(document.querySelectorAll('#score-entry-body input'));
+    const inputs = Array.from(document.querySelectorAll('#score-entry-body .score-input'));
     const currentIndex = inputs.indexOf(event.currentTarget);
     const offset = event.shiftKey ? -1 : 1;
     const nextInput = inputs[currentIndex + offset];
@@ -1531,7 +1652,7 @@ const state = {
       return;
     }
 
-    const entries = Array.from(document.querySelectorAll('#score-entry-body input')).map((input) => ({
+    const entries = Array.from(document.querySelectorAll('#score-entry-body .score-input')).map((input) => ({
       studentNo: input.dataset.studentNo,
       score: input.value.trim(),
     }));
@@ -1540,7 +1661,7 @@ const state = {
     showTeacherWarning('กำลังบันทึกคะแนน...');
     serverCall('teacherSaveAssignmentScores', [state.teacherToken, state.selectedClass, assignment.assignmentId, entries], (result) => {
       setBusy('save-score-grid', false);
-      Array.from(document.querySelectorAll('#score-entry-body input')).forEach((input) => {
+      Array.from(document.querySelectorAll('#score-entry-body .score-input')).forEach((input) => {
         input.dataset.lastSavedValue = normalizeScoreInputValue(input.value);
         setScoreInputStatus(input, 'saved', 'บันทึกแล้ว');
       });
@@ -2179,12 +2300,12 @@ const state = {
       const visibility = score.visibility || 'both';
       const scoreText = visibility === 'status' ? 'ครูซ่อนคะแนนไว้' : (score.rawValue || '-');
       const passText = visibility === 'score' ? '-' : formatValue(score.passScore);
-      const statusText = visibility === 'score' ? '-' : (score.status ? score.status.label : '-');
+      const statusText = visibility === 'score' ? '-' : renderStudentStatusBadge(score.status);
       row.innerHTML = [
         td(score.title),
         td(scoreText),
         td(passText),
-        td(statusText),
+        td(statusText, visibility !== 'score'),
       ].join('');
       if (score.status && score.status.code) {
         row.dataset.status = score.status.code;
@@ -2195,6 +2316,16 @@ const state = {
     renderList('student-missing-list', student.missingAssignments, (assignment) =>
       '<strong>' + escapeHtml(assignment.title) + '</strong><span>คะแนนเต็ม ' + formatValue(assignment.maxScore) + '</span>'
     );
+  }
+
+  function renderStudentStatusBadge(status) {
+    if (!status || !status.label) {
+      return '-';
+    }
+
+    return '<span class="student-status-badge" data-status="' + escapeHtml(status.code || 'recorded') + '">' +
+      escapeHtml(status.label) +
+      '</span>';
   }
 
   function handleChangeStudentPin() {

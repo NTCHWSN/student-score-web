@@ -603,6 +603,69 @@
     padding: 4px 6px;
   }
 
+  .teacher-student-name-cell {
+    display: grid;
+    gap: 8px;
+  }
+
+  .student-full-name {
+    display: inline-block;
+    font-weight: 900;
+  }
+
+  .teacher-nickname-chip {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border: 2px solid #000000;
+    background: #f2f2f2;
+    color: #000000;
+    margin-left: 8px;
+    padding: 2px 7px;
+    font-family: var(--font-label);
+    font-size: 0.75rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .nickname-field {
+    display: grid;
+    grid-template-columns: auto minmax(96px, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+  }
+
+  .nickname-field span:first-child,
+  .nickname-save-status {
+    color: var(--muted-text);
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .student-nickname-input {
+    min-height: 34px;
+    border-width: 2px;
+    padding: 6px 8px;
+    font-size: 0.9rem;
+  }
+
+  .nickname-field[data-save-status="saving"] .nickname-save-status {
+    color: #000000;
+  }
+
+  .nickname-field[data-save-status="saved"] .nickname-save-status {
+    color: #167f3a;
+  }
+
+  .nickname-field[data-save-status="error"] .nickname-save-status {
+    background: #000000;
+    color: #ffffff;
+    padding: 4px 6px;
+  }
+
   .scan-panel {
     border-top: 4px solid #000000;
     margin-top: 18px;
@@ -821,19 +884,42 @@
     white-space: pre;
   }
 
-  tr[data-status="passed"] td,
-  tr[data-status="bonus"] td {
-    border-left: 4px solid #000000;
+  .student-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 112px;
+    border: 3px solid #000000;
+    padding: 8px 10px;
+    color: #000000;
+    font-family: var(--font-label);
+    font-size: 0.95rem;
+    font-weight: 950;
+    line-height: 1.15;
+    text-align: center;
+    box-shadow: 4px 4px 0 #000000;
   }
 
-  tr[data-status="needs-revision"] td {
-    background: repeating-linear-gradient(45deg, #ffffff, #ffffff 10px, #f5f5f5 10px, #f5f5f5 20px);
-    border-left: 4px double #000000;
-  }
-
-  tr[data-status="missing"] td {
-    background: #000000;
+  .student-status-badge[data-status="missing"] {
+    background: #ff3b30;
     color: #ffffff;
+  }
+
+  .student-status-badge[data-status="needs-revision"] {
+    background: #ffd43b;
+    color: #000000;
+  }
+
+  .student-status-badge[data-status="passed"],
+  .student-status-badge[data-status="recorded"],
+  .student-status-badge[data-status="bonus"] {
+    background: #33d17a;
+    color: #000000;
+  }
+
+  .student-status-badge[data-status="bonus-empty"] {
+    background: #f2f2f2;
+    color: #000000;
   }
 
   .note-text,
@@ -1100,6 +1186,16 @@
       min-width: 0;
       text-align: center;
       font-size: 10px;
+    }
+
+    .teacher-page .nickname-field {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .teacher-page .teacher-nickname-chip {
+      margin: 4px 0 0;
+      white-space: normal;
     }
 
     .teacher-page .scan-panel {
