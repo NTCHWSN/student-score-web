@@ -115,6 +115,11 @@ const state = {
     bindClick('make-score-report', () => makeTeacherReport('score'));
     bindClick('make-missing-report', () => makeTeacherReport('missing'));
     bindClick('print-summary', () => window.print());
+    bindClick('copy-missing-summary', handleCopyMissingSummary);
+    const missingDetailList = byId('missing-detail-list');
+    if (missingDetailList) {
+      missingDetailList.addEventListener('click', handleMissingDetailClick);
+    }
     const select = byId('class-select');
     if (select) {
       select.addEventListener('change', () => {
@@ -541,7 +546,7 @@ const state = {
         body.innerHTML = '<tr><td colspan="6">ยังไม่มีข้อมูล</td></tr>';
       }
     });
-    ['missing-list', 'risk-list'].forEach((id) => {
+    ['missing-list', 'risk-list', 'missing-detail-list'].forEach((id) => {
       const container = byId(id);
       if (container) {
         container.innerHTML = '<div class="list-item">ยังไม่มีข้อมูล</div>';
@@ -1008,6 +1013,7 @@ const state = {
 
   function renderClassSummary(result) {
     const summary = result.summary;
+    state.latestClassSummary = result;
     byId('metric-students').textContent = summary.studentCount;
     byId('metric-assignments').textContent = summary.assignmentCount;
     byId('metric-max').textContent = formatValue(summary.maxTotal);
@@ -1046,6 +1052,133 @@ const state = {
       '<strong>เลขที่ ' + escapeHtml(student.no) + ' ' + escapeHtml(student.name) + '</strong><span>' +
       formatPercent(student.percent) + ' เกรด ' + escapeHtml(student.estimatedGrade) + '</span>'
     );
+    renderMissingDetailList(summary.students || []);
+  }
+
+  function renderMissingDetailList(students) {
+    const container = byId('missing-detail-list');
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = '';
+    if (!students || students.length === 0) {
+      container.innerHTML = '<div class="list-item">ยังไม่มีข้อมูลนักเรียนในห้องนี้</div>';
+      return;
+    }
+
+    students.forEach((student) => {
+      const card = document.createElement('article');
+      card.className = 'missing-detail-card';
+      card.dataset.studentNo = student.no;
+      const missingAssignments = student.missingAssignments || [];
+      const missingList = missingAssignments.length > 0
+        ? '<ol>' + missingAssignments.map((assignment) =>
+          '<li>' + escapeHtml(assignment.title) + '</li>'
+        ).join('') + '</ol>'
+        : '<p class="note-text">ไม่มีงานค้าง</p>';
+      card.innerHTML = [
+        '<div class="missing-detail-head">',
+        '<div><strong>เลขที่ ' + escapeHtml(student.no) + ' ' + escapeHtml(student.name) + '</strong>',
+        '<span>' + (missingAssignments.length > 0 ? 'ค้าง ' + missingAssignments.length + ' งาน' : 'ไม่มีงานค้าง') + '</span></div>',
+        '</div>',
+        '<div class="missing-detail-work">',
+        missingList,
+        '</div>',
+        '<label for="student-note-' + escapeHtml(student.no) + '">หมายเหตุส่วนตัวถึงนักเรียน</label>',
+        '<textarea id="student-note-' + escapeHtml(student.no) + '" class="student-note-input" rows="3" data-student-no="' + escapeHtml(student.no) + '" placeholder="เช่น ส่งงานชิ้นที่ 2 เพิ่มนะ ครูรอตรวจให้อยู่">' + escapeHtml(student.note || '') + '</textarea>',
+        '<div class="button-row">',
+        '<button type="button" class="button-outline save-student-note" data-student-no="' + escapeHtml(student.no) + '">บันทึกหมายเหตุ</button>',
+        '<span class="note-save-status" data-student-no="' + escapeHtml(student.no) + '"></span>',
+        '</div>',
+      ].join('');
+      container.appendChild(card);
+    });
+  }
+
+  function handleMissingDetailClick(event) {
+    const button = event.target.closest('.save-student-note');
+    if (!button) {
+      return;
+    }
+
+    const card = button.closest('.missing-detail-card');
+    const studentNo = button.dataset.studentNo || (card ? card.dataset.studentNo : '');
+    const noteInput = card ? card.querySelector('.student-note-input') : null;
+    const note = noteInput ? noteInput.value : '';
+    saveStudentNote(studentNo, note, button);
+  }
+
+  function saveStudentNote(studentNo, note, button) {
+    if (!state.selectedClass || !studentNo) {
+      showTeacherWarning('กรุณาเลือกห้องและนักเรียนก่อนบันทึกหมายเหตุ');
+      return;
+    }
+
+    const status = findStudentNoteStatus(studentNo);
+    if (status) {
+      status.textContent = 'กำลังบันทึก...';
+    }
+    if (button) {
+      button.disabled = true;
+    }
+
+    serverCall('teacherSaveStudentNote', [state.teacherToken, state.selectedClass, studentNo, note], (result) => {
+      if (button) {
+        button.disabled = false;
+      }
+      if (status) {
+        status.textContent = result.message || 'บันทึกแล้ว';
+      }
+      renderClassSummary(result);
+    }, (error) => {
+      if (button) {
+        button.disabled = false;
+      }
+      if (status) {
+        status.textContent = 'บันทึกไม่สำเร็จ';
+      }
+      showTeacherWarning((error && error.message) || String(error));
+    });
+  }
+
+  function findStudentNoteStatus(studentNo) {
+    const statuses = document.querySelectorAll('.note-save-status');
+    for (let i = 0; i < statuses.length; i += 1) {
+      if (String(statuses[i].dataset.studentNo || '') === String(studentNo || '')) {
+        return statuses[i];
+      }
+    }
+    return null;
+  }
+
+  function handleCopyMissingSummary() {
+    const result = state.latestClassSummary;
+    const students = result && result.summary ? result.summary.students || [] : [];
+    const text = buildMissingSummaryText(state.selectedClass, students);
+    copyTextToClipboard(text, () => {
+      showTeacherWarning('คัดลอกสรุปงานค้างของห้อง ' + state.selectedClass + ' แล้ว');
+    });
+  }
+
+  function buildMissingSummaryText(className, students) {
+    const missingStudents = (students || []).filter((student) => (student.missingAssignments || []).length > 0);
+    const lines = ['สรุปงานค้าง ห้อง ' + (className || '-')];
+    if (missingStudents.length === 0) {
+      lines.push('ไม่มีนักเรียนค้างงานในห้องนี้');
+      return lines.join('\n');
+    }
+
+    missingStudents.forEach((student) => {
+      lines.push(
+        'เลขที่ ' + student.no + ' ' + student.name + ': ' +
+        (student.missingAssignments || []).map((assignment) => assignment.title).join(', ')
+      );
+      if (student.note) {
+        lines.push('  หมายเหตุ: ' + student.note);
+      }
+    });
+    return lines.join('\n');
   }
 
   function renderAssignmentControls(summary) {

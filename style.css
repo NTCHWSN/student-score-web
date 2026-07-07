@@ -772,6 +772,50 @@
     font-weight: 800;
   }
 
+  .missing-detail-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .missing-detail-card {
+    border: 2px solid #000000;
+    background: #ffffff;
+    padding: 14px;
+  }
+
+  .missing-detail-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .missing-detail-head strong,
+  .missing-detail-head span {
+    display: block;
+  }
+
+  .missing-detail-head span,
+  .note-save-status {
+    color: var(--muted-text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .missing-detail-work {
+    margin-bottom: 12px;
+  }
+
+  .missing-detail-work ol {
+    margin: 8px 0 0 20px;
+    padding: 0;
+  }
+
+  .student-note-input {
+    min-height: 84px;
+    resize: vertical;
+  }
+
   .sgs-output {
     min-height: 220px;
     white-space: pre;
