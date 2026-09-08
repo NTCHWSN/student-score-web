@@ -212,21 +212,31 @@
               <button id="save-score-grid" type="button">บันทึกคะแนน</button>
             </div>
             <div class="score-toolbar">
-              <label for="assignment-select">งาน</label>
-              <select id="assignment-select"></select>
-              <label for="assignment-title-input" class="mobile-secondary">ชื่องาน</label>
-              <input id="assignment-title-input" class="mobile-secondary">
-              <label for="assignment-max-input">คะแนนเต็ม</label>
-              <input id="assignment-max-input" inputmode="decimal">
-              <label for="assignment-pass-input" class="mobile-secondary">ผ่านที่</label>
-              <input id="assignment-pass-input" class="mobile-secondary" inputmode="decimal" placeholder="เช่น 7">
-              <label for="assignment-visibility">ให้นักเรียนเห็น</label>
-              <select id="assignment-visibility">
-                <option value="both">คะแนน + สถานะ</option>
-                <option value="status">เฉพาะสถานะ</option>
-                <option value="score">เฉพาะคะแนน</option>
-                <option value="hidden">ซ่อนงานนี้</option>
-              </select>
+              <div class="score-toolbar-field score-toolbar-field-wide">
+                <label for="assignment-select">งาน</label>
+                <select id="assignment-select"></select>
+              </div>
+              <div class="score-toolbar-field score-toolbar-field-wide mobile-secondary">
+                <label for="assignment-title-input">ชื่องาน</label>
+                <input id="assignment-title-input">
+              </div>
+              <div class="score-toolbar-field">
+                <label for="assignment-max-input">คะแนนเต็ม</label>
+                <input id="assignment-max-input" inputmode="decimal">
+              </div>
+              <div class="score-toolbar-field mobile-secondary">
+                <label for="assignment-pass-input">ผ่านที่</label>
+                <input id="assignment-pass-input" inputmode="decimal" placeholder="เช่น 7">
+              </div>
+              <div class="score-toolbar-field score-toolbar-field-visibility">
+                <label for="assignment-visibility">ให้นักเรียนเห็น</label>
+                <select id="assignment-visibility">
+                  <option value="both">คะแนน + สถานะ</option>
+                  <option value="status">เฉพาะสถานะ</option>
+                  <option value="score">เฉพาะคะแนน</option>
+                  <option value="hidden">ซ่อนงานนี้</option>
+                </select>
+              </div>
               <button id="update-max-score" type="button">บันทึกงาน</button>
             </div>
             <div class="table-wrap score-grid-wrap">

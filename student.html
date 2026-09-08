@@ -45,12 +45,29 @@
         <section class="metrics">
           <div class="metric"><span>คะแนนที่กรอกแล้ว</span><strong id="student-total">-</strong></div>
           <div class="metric"><span>ร้อยละจากงานที่กรอก</span><strong id="student-percent">-</strong></div>
-          <div class="metric"><span>งานที่มีคะแนน</span><strong id="student-missing-count">-</strong></div>
+          <div class="metric"><span>งานค้าง</span><strong id="student-missing-count">-</strong></div>
+        </section>
+
+        <section class="panel student-missing-panel" aria-labelledby="student-missing-title">
+          <div class="student-section-head">
+            <div>
+              <p class="eyebrow">ต้องจัดการ</p>
+              <h2 id="student-missing-title">งานค้างของฉัน</h2>
+            </div>
+            <strong id="student-missing-pill" class="student-missing-pill">0 งาน</strong>
+          </div>
+          <div id="student-missing-highlight-list" class="student-work-list student-work-list-critical"></div>
         </section>
 
         <section class="split">
           <div class="panel">
-            <h2>รายการคะแนน</h2>
+            <div class="student-section-head">
+              <div>
+                <p class="eyebrow">รายการทั้งหมด</p>
+                <h2>งานที่ครูประกาศแล้ว</h2>
+              </div>
+            </div>
+            <div id="student-work-card-list" class="student-work-cards"></div>
             <div class="table-wrap">
               <table>
                 <thead>

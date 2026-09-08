@@ -2613,7 +2613,7 @@ const state = {
     byId('student-grade').textContent = student.estimatedGrade;
     byId('student-total').textContent = formatValue(student.totalScore);
     byId('student-percent').textContent = formatPercent(student.percent);
-    byId('student-missing-count').textContent = student.enteredScoreCount || 0;
+    byId('student-missing-count').textContent = student.missingCount || 0;
     byId('student-note').textContent = student.note || '-';
 
     const body = byId('student-score-body');
@@ -2641,9 +2641,98 @@ const state = {
       body.appendChild(row);
     });
 
+    renderStudentMissingOverview(student);
+    renderStudentWorkCards(student);
     renderList('student-missing-list', student.missingAssignments, (assignment) =>
       '<strong>' + escapeHtml(assignment.title) + '</strong><span>คะแนนเต็ม ' + formatValue(assignment.maxScore) + '</span>'
     );
+  }
+
+  function renderStudentMissingOverview(student) {
+    const panel = byId('student-missing-title') ? byId('student-missing-title').closest('.student-missing-panel') : null;
+    const pill = byId('student-missing-pill');
+    const list = byId('student-missing-highlight-list');
+    const missingAssignments = student.missingAssignments || [];
+    if (!list) {
+      return;
+    }
+
+    if (panel) {
+      panel.dataset.empty = missingAssignments.length === 0 ? 'true' : 'false';
+    }
+    if (pill) {
+      pill.textContent = missingAssignments.length + ' งาน';
+    }
+
+    if (missingAssignments.length === 0) {
+      list.innerHTML = '<div class="student-empty-state">ตอนนี้ไม่มีงานค้าง</div>';
+      return;
+    }
+
+    list.innerHTML = missingAssignments.map((assignment) =>
+      '<article class="student-work-item" data-status="missing">' +
+        '<div>' +
+          '<strong>' + escapeHtml(assignment.title) + '</strong>' +
+          '<div class="student-work-meta"><span>คะแนนเต็ม ' + formatValue(assignment.maxScore) + '</span></div>' +
+        '</div>' +
+        renderStudentStatusBadge({ code: 'missing', label: 'ยังไม่ส่งงาน' }) +
+      '</article>'
+    ).join('');
+  }
+
+  function renderStudentWorkCards(student) {
+    const container = byId('student-work-card-list');
+    const scores = student.scores || [];
+    if (!container) {
+      return;
+    }
+
+    if (scores.length === 0) {
+      container.innerHTML = '<div class="student-empty-state">ยังไม่มีงานที่ครูประกาศให้ดู</div>';
+      return;
+    }
+
+    container.innerHTML = scores.map((score) => {
+      const visibility = score.visibility || 'both';
+      const status = score.status || {};
+      const statusCode = status.code || 'recorded';
+      const rawValue = String(score.rawValue === null || score.rawValue === undefined ? '' : score.rawValue).trim();
+      const cardStatusCode = visibility === 'score'
+        ? (rawValue ? 'recorded' : 'missing')
+        : statusCode;
+      const scoreText = visibility === 'status'
+        ? 'ครูซ่อนคะแนนไว้'
+        : (rawValue ? 'คะแนน ' + escapeHtml(rawValue) : 'ยังไม่มีคะแนน');
+      const passText = visibility === 'score' || score.passScore === null || score.passScore === undefined
+        ? ''
+        : '<span>ผ่านที่ ' + formatValue(score.passScore) + '</span>';
+      const maxText = score.maxScore === null || score.maxScore === undefined
+        ? ''
+        : '<span>เต็ม ' + formatValue(score.maxScore) + '</span>';
+      const badge = visibility === 'score'
+        ? renderStudentSimpleStatusBadge(score)
+        : renderStudentStatusBadge(status);
+
+      return '<article class="student-work-card" data-status="' + escapeHtml(cardStatusCode) + '">' +
+        '<div>' +
+          '<strong>' + escapeHtml(score.title) + '</strong>' +
+          '<div class="student-work-meta">' +
+            '<span>' + scoreText + '</span>' +
+            maxText +
+            passText +
+          '</div>' +
+        '</div>' +
+        badge +
+      '</article>';
+    }).join('');
+  }
+
+  function renderStudentSimpleStatusBadge(score) {
+    const rawValue = String(score && score.rawValue !== null && score.rawValue !== undefined ? score.rawValue : '').trim();
+    if (!rawValue) {
+      return renderStudentStatusBadge({ code: 'missing', label: 'ยังไม่ส่งงาน' });
+    }
+    return renderStudentStatusBadge({ code: 'recorded', label: 'ส่งแล้ว' });
   }
 
   function renderStudentStatusBadge(status) {

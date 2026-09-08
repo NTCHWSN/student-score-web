@@ -587,12 +587,39 @@
 
   .score-toolbar {
     display: grid;
-    grid-template-columns: auto minmax(150px, 1fr) auto minmax(72px, 98px) auto minmax(72px, 98px) auto minmax(140px, 0.8fr) auto;
+    grid-template-columns:
+      minmax(170px, 1.2fr)
+      minmax(150px, 1fr)
+      minmax(92px, 0.5fr)
+      minmax(92px, 0.5fr)
+      minmax(190px, 0.9fr)
+      auto;
     align-items: end;
     gap: 12px;
     border-bottom: 1px solid var(--line-light);
     margin-bottom: 14px;
     padding-bottom: 14px;
+  }
+
+  .score-toolbar-field {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .score-toolbar-field-wide,
+  .score-toolbar-field-visibility {
+    min-width: 0;
+  }
+
+  .score-toolbar input,
+  .score-toolbar select {
+    min-width: 0;
+  }
+
+  .score-toolbar > button {
+    align-self: end;
+    min-width: 120px;
   }
 
   .scale-grid {
@@ -1062,6 +1089,115 @@
     color: #000000;
   }
 
+  .student-section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 14px;
+    border-bottom: 2px solid #000000;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .student-section-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.12;
+  }
+
+  .student-missing-panel {
+    border-width: 3px;
+  }
+
+  .student-missing-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 86px;
+    border: 3px solid #000000;
+    background: #ff3b30;
+    color: #ffffff;
+    padding: 8px 12px;
+    font-family: var(--font-label);
+    font-size: 16px;
+    font-weight: 950;
+    line-height: 1;
+    box-shadow: 4px 4px 0 #000000;
+    white-space: nowrap;
+  }
+
+  .student-missing-panel[data-empty="true"] .student-missing-pill {
+    background: #33d17a;
+    color: #000000;
+  }
+
+  .student-work-list,
+  .student-work-cards {
+    display: grid;
+    gap: 10px;
+  }
+
+  .student-work-list-critical {
+    gap: 8px;
+  }
+
+  .student-work-item,
+  .student-work-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid #000000;
+    background: #ffffff;
+    padding: 12px;
+  }
+
+  .student-work-item strong,
+  .student-work-card strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.25;
+  }
+
+  .student-work-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    color: var(--muted-text);
+    font-family: var(--font-label);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .student-work-card[data-status="missing"],
+  .student-work-item[data-status="missing"] {
+    background: #fff0f0;
+  }
+
+  .student-work-card[data-status="needs-revision"] {
+    background: #fff7d6;
+  }
+
+  .student-work-card[data-status="passed"],
+  .student-work-card[data-status="recorded"],
+  .student-work-card[data-status="bonus"] {
+    background: #edfff5;
+  }
+
+  .student-work-card[data-status="bonus-empty"] {
+    background: #f7f7f7;
+  }
+
+  .student-empty-state {
+    border: 2px solid #000000;
+    background: #edfff5;
+    padding: 14px;
+    font-weight: 900;
+  }
+
   .note-text,
   .message {
     color: var(--muted-text);
@@ -1427,5 +1563,48 @@
 
     .teacher-page .scan-result {
       padding: 10px;
+    }
+
+    .student-header {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    .student-header h2 {
+      font-size: clamp(28px, 9vw, 38px);
+      line-height: 1.18;
+    }
+
+    .grade-badge {
+      width: 100%;
+      min-height: 64px;
+      font-size: 30px;
+    }
+
+    .student-section-head,
+    .student-work-item,
+    .student-work-card {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+
+    .student-section-head {
+      display: grid;
+    }
+
+    .student-missing-pill,
+    .student-status-badge {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .student-work-card strong,
+    .student-work-item strong {
+      font-size: 18px;
+    }
+
+    .student-work-meta {
+      font-size: 13px;
     }
   }
