@@ -116,6 +116,8 @@ const state = {
     bindClick('update-max-score', handleUpdateMaxScore);
     bindClick('add-assignment', handleAddAssignment);
     bindClick('scale-scores', handleScaleScores);
+    bindClick('save-chapter-visibility', handleSaveChapterVisibility);
+    bindClick('cut-final-grades', handleCutFinalGrades);
     bindClick('scan-capture-label', handleScanCaptureLabelClick);
     bindClick('open-scan-camera', handleOpenScanCamera);
     bindClick('scan-current-frame', handleScanCurrentFrame);
@@ -1557,7 +1559,54 @@ const state = {
       targetSelect.value = previousTarget;
     }
 
+    renderAssignmentChecklist('scale-assignment-checklist', sourceAssignments, 'scale-source-assignment', []);
+    renderAssignmentChecklist(
+      'chapter-visibility-list',
+      sourceAssignments,
+      'chapter-visible-assignment',
+      sourceAssignments.filter((assignment) => assignment.visibility !== 'hidden').map((assignment) => assignment.assignmentId)
+    );
+    renderAssignmentChecklist(
+      'grade-component-list',
+      sourceAssignments,
+      'grade-component-assignment',
+      sourceAssignments.filter((assignment) => shouldDefaultGradeComponent(assignment)).map((assignment) => assignment.assignmentId)
+    );
     updateScaleTargetTitle(true);
+  }
+
+  function renderAssignmentChecklist(containerId, assignments, inputClassName, selectedIds) {
+    const container = byId(containerId);
+    if (!container) {
+      return;
+    }
+
+    const selectedMap = (selectedIds || []).reduce((map, id) => {
+      map[id] = true;
+      return map;
+    }, {});
+    container.innerHTML = '';
+    if (!assignments || assignments.length === 0) {
+      container.innerHTML = '<div class="list-item">ยังไม่มีงานให้เลือก</div>';
+      return;
+    }
+
+    assignments.forEach((assignment, index) => {
+      const label = document.createElement('label');
+      label.className = 'assignment-check-item';
+      const checked = selectedMap[assignment.assignmentId] ? ' checked' : '';
+      label.innerHTML = [
+        '<input type="checkbox" class="' + escapeHtml(inputClassName) + '" value="' + escapeHtml(assignment.assignmentId) + '"' + checked + '>',
+        '<span>' + escapeHtml(formatAssignmentLabel(assignment, index)) + '</span>',
+        '<small>เต็ม ' + escapeHtml(formatValue(assignment.maxScore)) + '</small>',
+      ].join('');
+      container.appendChild(label);
+    });
+  }
+
+  function shouldDefaultGradeComponent(assignment) {
+    const title = String(assignment && assignment.title || '').toLowerCase();
+    return /รวม|บท|กลางภาค|ปลายภาค/.test(title) && !/ตอบคำถาม/.test(title);
   }
 
   function updateScaleTargetTitle(forceAuto) {
@@ -2410,16 +2459,19 @@ const state = {
   }
 
   function handleScaleScores() {
+    const selectedAssignmentIds = getCheckedValues('.scale-source-assignment');
     const payload = {
       sourceStartAssignmentId: byId('scale-start-assignment').value,
       sourceEndAssignmentId: byId('scale-end-assignment').value,
+      selectedAssignmentIds: selectedAssignmentIds,
       targetAssignmentId: byId('scale-target-assignment').value,
       targetTitle: byId('scale-target-title').value.trim(),
       targetMaxScore: byId('scale-target-max').value.trim(),
       decimals: byId('scale-decimals').value,
+      roundingMode: byId('scale-rounding-mode') ? byId('scale-rounding-mode').value : 'ceil',
     };
 
-    if (!payload.sourceStartAssignmentId || !payload.sourceEndAssignmentId) {
+    if (selectedAssignmentIds.length === 0 && (!payload.sourceStartAssignmentId || !payload.sourceEndAssignmentId)) {
       showTeacherWarning('กรุณาเลือกช่วงงานต้นทาง');
       return;
     }
@@ -2439,6 +2491,57 @@ const state = {
       setBusy('scale-scores', false);
       showTeacherWarning(error.message || String(error));
     });
+  }
+
+  function handleSaveChapterVisibility() {
+    const assignmentIds = getCheckedValues('.chapter-visible-assignment');
+    if (assignmentIds.length === 0) {
+      showTeacherWarning('กรุณาเลือกคะแนนที่ต้องการให้นักเรียนเห็น');
+      return;
+    }
+
+    const payload = {
+      assignmentIds: assignmentIds,
+      visibility: byId('chapter-display-mode') ? byId('chapter-display-mode').value : 'both',
+    };
+    setBusy('save-chapter-visibility', true);
+    showTeacherWarning('กำลังบันทึกการแสดงผลคะแนนทุกห้อง...');
+    serverCall('teacherSetLinkedAssignmentVisibility', [state.teacherToken, state.selectedClass, payload], (result) => {
+      setBusy('save-chapter-visibility', false);
+      showTeacherWarning(result.message || 'บันทึกการแสดงผลแล้ว');
+      loadSelectedClass();
+    }, (error) => {
+      setBusy('save-chapter-visibility', false);
+      showTeacherWarning(error.message || String(error));
+    });
+  }
+
+  function handleCutFinalGrades() {
+    const assignmentIds = getCheckedValues('.grade-component-assignment');
+    if (assignmentIds.length === 0) {
+      showTeacherWarning('กรุณาเลือกคะแนนบท กลางภาค หรือปลายภาคก่อนตัดเกรด');
+      return;
+    }
+
+    const payload = {
+      assignmentIds: assignmentIds,
+      roundingMode: byId('grade-rounding-mode') ? byId('grade-rounding-mode').value : 'ceil',
+      applyAllLinkedClasses: true,
+    };
+    setBusy('cut-final-grades', true);
+    showTeacherWarning('กำลังคำนวณรวม 100 และตัดเกรดทุกห้อง...');
+    serverCall('teacherCutFinalGrades', [state.teacherToken, state.selectedClass, payload], (result) => {
+      setBusy('cut-final-grades', false);
+      showTeacherWarning(result.message || 'ตัดเกรดแล้ว');
+      loadSelectedClass();
+    }, (error) => {
+      setBusy('cut-final-grades', false);
+      showTeacherWarning(error.message || String(error));
+    });
+  }
+
+  function getCheckedValues(selector) {
+    return Array.from(document.querySelectorAll(selector + ':checked')).map((input) => input.value).filter(Boolean);
   }
 
   function handleDownloadCsv(event) {

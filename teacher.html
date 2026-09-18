@@ -88,6 +88,7 @@
           <button type="button" data-tool-target="reports">รายงาน</button>
           <button type="button" data-tool-target="sgs">SGS</button>
           <button type="button" data-tool-target="missing">งานค้าง</button>
+          <button type="button" data-tool-target="grades">คะแนนบท/เกรด</button>
         </nav>
 
         <section id="legacy-tools" class="tool-panel teacher-tools-only" data-tool-panel="system">
@@ -340,8 +341,51 @@
                   <label for="scale-target-title">ชื่องานใหม่</label>
                   <input id="scale-target-title" placeholder="เช่น รวมงาน 1-3 /10">
                 </div>
+                <div class="full-span">
+                  <label>เลือกงานเอง</label>
+                  <div id="scale-assignment-checklist" class="assignment-checklist"></div>
+                  <p class="note-text">ติ๊กหลายงานเพื่อรวมเฉพาะช่องที่ต้องการ หากไม่ติ๊ก ระบบจะใช้ช่วงจากงาน-ถึงงานด้านบน</p>
+                </div>
+                <div>
+                  <label for="scale-rounding-mode">การปัดคะแนน</label>
+                  <select id="scale-rounding-mode">
+                    <option value="ceil" selected>ปัดขึ้น</option>
+                    <option value="round">ปัดตามปกติ</option>
+                  </select>
+                </div>
               </div>
               <button id="scale-scores" type="button">คำนวณและบันทึก</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel mobile-secondary tool-panel teacher-tools-only" data-tool-panel="grades">
+          <div class="panel-head">
+            <h2>คะแนนบทและการตัดเกรด</h2>
+          </div>
+          <div class="split setup-workspace">
+            <div>
+              <h3>ให้นักเรียนเห็น</h3>
+              <p class="note-text">ติ๊กคะแนนบทหรือคะแนนสรุปที่ต้องการให้นักเรียนทุกห้องเห็น งานที่ไม่ติ๊กจะถูกซ่อนจากหน้านักเรียน</p>
+              <label for="chapter-display-mode">รูปแบบที่แสดง</label>
+              <select id="chapter-display-mode">
+                <option value="both" selected>คะแนน + สถานะ</option>
+                <option value="score">เฉพาะคะแนน</option>
+                <option value="status">เฉพาะสถานะ</option>
+              </select>
+              <div id="chapter-visibility-list" class="assignment-checklist"></div>
+              <button id="save-chapter-visibility" type="button">บันทึกการแสดงผลทุกห้อง</button>
+            </div>
+            <div>
+              <h3>ตัดเกรดรวม 100</h3>
+              <p class="note-text">เลือกคะแนนบทที่สรุปแล้ว รวมกลางภาค และปลายภาค ระบบจะคำนวณเป็น 100 คะแนนแล้วใส่เกรดตามเกณฑ์ปกติ</p>
+              <div id="grade-component-list" class="assignment-checklist"></div>
+              <label for="grade-rounding-mode">การปัดคะแนนรวม</label>
+              <select id="grade-rounding-mode">
+                <option value="ceil" selected>ปัดขึ้น</option>
+                <option value="round">ปัดตามปกติ</option>
+              </select>
+              <button id="cut-final-grades" type="button">ตัดเกรดทุกห้อง</button>
             </div>
           </div>
         </section>

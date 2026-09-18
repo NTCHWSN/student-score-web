@@ -1075,6 +1075,44 @@
     grid-column: 1 / -1;
   }
 
+  .assignment-checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin: 8px 0 4px;
+  }
+
+  .assignment-check-item {
+    min-height: 48px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(25, 38, 67, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 10px 26px rgba(23, 37, 84, 0.08);
+  }
+
+  .assignment-check-item input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+  }
+
+  .assignment-check-item span {
+    min-width: 0;
+    font-weight: 800;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  .assignment-check-item small {
+    color: var(--muted-text);
+    white-space: nowrap;
+  }
+
   .score-grid-wrap {
     max-height: 540px;
   }
