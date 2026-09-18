@@ -1606,7 +1606,10 @@ const state = {
 
   function shouldDefaultGradeComponent(assignment) {
     const title = String(assignment && assignment.title || '').toLowerCase();
-    return /รวม|บท|กลางภาค|ปลายภาค/.test(title) && !/ตอบคำถาม/.test(title);
+    const normalizedTitle = title.replace(/\s+/g, '');
+    return /รวม|บท|กลางภาค|ปลายภาค/.test(title) &&
+      !/ตอบคำถาม/.test(title) &&
+      !['รวม100', 'คะแนนรวม100', 'รวมคะแนน100', 'final100', 'เกรด', 'finalgrade'].includes(normalizedTitle);
   }
 
   function updateScaleTargetTitle(forceAuto) {
