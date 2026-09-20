@@ -2717,8 +2717,11 @@ const state = {
     byId('student-class-label').textContent = 'ห้อง ' + student.className + ' เลขที่ ' + student.no;
     byId('student-name').textContent = student.name;
     byId('student-grade').textContent = student.estimatedGrade;
-    byId('student-total').textContent = formatValue(student.totalScore);
-    byId('student-percent').textContent = formatPercent(student.percent);
+    byId('student-total').textContent = student.visibleScoreCount > 0 ? formatValue(student.visibleTotalScore) : '-';
+    const percentBox = byId('student-percent');
+    if (percentBox) {
+      percentBox.textContent = formatPercent(student.percent);
+    }
     byId('student-missing-count').textContent = student.missingCount || 0;
     byId('student-note').textContent = student.note || '-';
 
