@@ -11,6 +11,7 @@ const state = {
     scanResults: [],
     scanAutoTimer: null,
     scanBusy: false,
+    studentRefreshTimer: null,
     studentTeacherRequestId: 0,
     studentClassRequestId: 0,
     studentRosterRequestId: 0,
@@ -2684,6 +2685,7 @@ const state = {
   }
 
   function handleStudentLogout() {
+    stopStudentDashboardAutoRefresh();
     state.studentToken = '';
     sessionStorage.removeItem('studentToken');
     const dashboard = byId('student-dashboard');
@@ -2708,6 +2710,7 @@ const state = {
 
   function renderStudentDashboard(dashboard) {
     const student = dashboard.student;
+    startStudentDashboardAutoRefresh();
     byId('student-login').classList.toggle('hidden', true);
     byId('student-dashboard').classList.toggle('hidden', false);
     const logoutButton = byId('student-logout-button');
@@ -2755,6 +2758,27 @@ const state = {
     renderList('student-missing-list', student.missingAssignments, (assignment) =>
       '<strong>' + escapeHtml(assignment.title) + '</strong><span>คะแนนเต็ม ' + formatValue(assignment.maxScore) + '</span>'
     );
+  }
+
+  function startStudentDashboardAutoRefresh() {
+    if (!state.studentToken || state.studentRefreshTimer) {
+      return;
+    }
+    state.studentRefreshTimer = window.setInterval(() => {
+      if (!state.studentToken || document.hidden) {
+        return;
+      }
+      serverCall('studentGetDashboard', [state.studentToken], renderStudentDashboard, (error) => {
+        console.warn('รีเฟรชคะแนนนักเรียนไม่สำเร็จ', error);
+      });
+    }, 60000);
+  }
+
+  function stopStudentDashboardAutoRefresh() {
+    if (state.studentRefreshTimer) {
+      window.clearInterval(state.studentRefreshTimer);
+      state.studentRefreshTimer = null;
+    }
   }
 
   function renderStudentMissingOverview(student) {
