@@ -1685,29 +1685,78 @@ const state = {
   }
 
   function renderScoreEntryGrid() {
+    const head = byId('score-entry-head');
     const body = byId('score-entry-body');
     if (!body) {
       return;
     }
 
     clearScoreAutosaveTimers();
+    if (head) {
+      head.innerHTML = '';
+    }
     body.innerHTML = '';
     const summary = state.latestClassSummary && state.latestClassSummary.summary;
-    const assignment = getSelectedAssignment();
+    const assignments = summary ? summary.assignments || [] : [];
 
-    if (!summary || !assignment) {
+    if (!summary || assignments.length === 0) {
       const row = document.createElement('tr');
       row.innerHTML = '<td colspan="3">ไม่มีข้อมูล</td>';
       body.appendChild(row);
       return;
     }
 
+    if (head) {
+      const titleRow = document.createElement('tr');
+      titleRow.className = 'score-sheet-title-row';
+      titleRow.innerHTML = [
+        '<th class="score-sheet-no" rowspan="2">เลขที่</th>',
+        '<th class="score-sheet-name" rowspan="2">ชื่อ-นามสกุล</th>',
+      ].join('');
+      assignments.forEach((assignment, index) => {
+        const th = document.createElement('th');
+        th.className = 'score-sheet-assignment';
+        th.dataset.assignmentId = assignment.assignmentId;
+        th.dataset.selected = assignment.assignmentId === state.selectedAssignmentId ? 'true' : 'false';
+        th.title = assignment.title + ' · เต็ม ' + formatValue(assignment.maxScore);
+        th.innerHTML = '<button type="button" class="score-sheet-assignment-button" data-assignment-id="' +
+          escapeHtml(assignment.assignmentId) + '">' +
+          '<span>' + escapeHtml(assignment.title || ('งาน ' + (index + 1))) + '</span>' +
+          '</button>';
+        titleRow.appendChild(th);
+      });
+
+      const maxRow = document.createElement('tr');
+      maxRow.className = 'score-sheet-max-row';
+      assignments.forEach((assignment) => {
+        const th = document.createElement('th');
+        th.className = 'score-sheet-max';
+        th.dataset.selected = assignment.assignmentId === state.selectedAssignmentId ? 'true' : 'false';
+        th.textContent = formatValue(assignment.maxScore);
+        maxRow.appendChild(th);
+      });
+      head.appendChild(titleRow);
+      head.appendChild(maxRow);
+
+      Array.from(head.querySelectorAll('.score-sheet-assignment-button')).forEach((button) => {
+        button.addEventListener('click', () => {
+          const assignmentId = button.dataset.assignmentId || '';
+          const select = byId('assignment-select');
+          if (select && assignmentId) {
+            select.value = assignmentId;
+            handleAssignmentChange();
+          }
+        });
+      });
+    }
+
     summary.students.forEach((student) => {
-      const score = getStudentScore(student, assignment.assignmentId);
       const row = document.createElement('tr');
-      row.innerHTML = [td(student.no), '<td></td>', '<td></td>'].join('');
+      row.innerHTML = [td(student.no), '<td></td>'].join('');
+      row.children[0].className = 'score-sheet-no';
 
       const nameCell = row.children[1];
+      nameCell.className = 'score-sheet-name';
       const nameWrap = document.createElement('div');
       nameWrap.className = 'teacher-student-name-cell';
       const fullName = document.createElement('strong');
@@ -1736,29 +1785,39 @@ const state = {
       nameWrap.appendChild(nicknameLabel);
       nameCell.appendChild(nameWrap);
 
-      const input = document.createElement('input');
-      input.className = 'score-input';
-      input.dataset.studentNo = student.no;
-      input.dataset.assignmentId = assignment.assignmentId;
-      input.dataset.lastSavedValue = score ? score.rawValue : '';
-      input.inputMode = 'decimal';
-      input.value = score ? score.rawValue : '';
-      input.addEventListener('keydown', handleScoreInputNavigation);
-      input.addEventListener('input', handleScoreInputAutosave);
-      input.addEventListener('change', (event) => saveScoreInput(event.currentTarget, true));
-      input.addEventListener('blur', (event) => saveScoreInput(event.currentTarget, true));
-      if (assignment.maxScore !== null) {
-        input.max = assignment.maxScore;
-      }
+      assignments.forEach((assignment) => {
+        const score = getStudentScore(student, assignment.assignmentId);
+        const cell = document.createElement('td');
+        cell.className = 'score-sheet-score-cell';
+        cell.dataset.assignmentId = assignment.assignmentId;
+        cell.dataset.selected = assignment.assignmentId === state.selectedAssignmentId ? 'true' : 'false';
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'score-input-wrap';
-      const status = document.createElement('span');
-      status.className = 'score-save-status';
-      status.textContent = 'บันทึกอัตโนมัติ';
-      wrapper.appendChild(input);
-      wrapper.appendChild(status);
-      row.children[2].appendChild(wrapper);
+        const input = document.createElement('input');
+        input.className = 'score-input';
+        input.dataset.studentNo = student.no;
+        input.dataset.assignmentId = assignment.assignmentId;
+        input.dataset.lastSavedValue = score ? score.rawValue : '';
+        input.inputMode = 'decimal';
+        input.value = score ? score.rawValue : '';
+        input.title = student.no + ' ' + student.name + ' · ' + assignment.title;
+        input.addEventListener('keydown', handleScoreInputNavigation);
+        input.addEventListener('input', handleScoreInputAutosave);
+        input.addEventListener('change', (event) => saveScoreInput(event.currentTarget, true));
+        input.addEventListener('blur', (event) => saveScoreInput(event.currentTarget, true));
+        if (assignment.maxScore !== null) {
+          input.max = assignment.maxScore;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'score-input-wrap';
+        const status = document.createElement('span');
+        status.className = 'score-save-status';
+        status.textContent = '';
+        wrapper.appendChild(input);
+        wrapper.appendChild(status);
+        cell.appendChild(wrapper);
+        row.appendChild(cell);
+      });
       body.appendChild(row);
     });
   }
@@ -1787,8 +1846,8 @@ const state = {
   }
 
   function saveScoreInput(input, force) {
-    const assignment = getSelectedAssignment();
-    if (!input || !assignment || input.dataset.assignmentId !== assignment.assignmentId || !state.selectedClass) {
+    const assignment = getAssignmentById(input && input.dataset ? input.dataset.assignmentId : '');
+    if (!input || !assignment || !state.selectedClass) {
       return;
     }
 
@@ -1823,7 +1882,7 @@ const state = {
 
       if (normalizeScoreInputValue(input.value) !== currentValue) {
         input.dataset.lastSavedValue = currentValue;
-        if (state.selectedClass === className && state.selectedAssignmentId === assignmentId) {
+        if (state.selectedClass === className) {
           handleScoreInputAutosave({ currentTarget: input });
         }
         return;
@@ -1833,6 +1892,7 @@ const state = {
       setScoreInputStatus(input, 'saved', 'บันทึกแล้ว');
       if (state.selectedClass === className) {
         updateLatestSummaryAfterAutosave(result);
+        syncScoreInputsFromLatestSummary(input);
       }
     }, (error) => {
       if (String(input.dataset.saveSequence || '') !== String(sequence)) {
@@ -1958,6 +2018,35 @@ const state = {
     }
   }
 
+  function syncScoreInputsFromLatestSummary(activeInput) {
+    const summary = state.latestClassSummary && state.latestClassSummary.summary;
+    if (!summary) {
+      return;
+    }
+
+    const studentMap = (summary.students || []).reduce((map, student) => {
+      map[String(student.no || '').trim()] = student;
+      return map;
+    }, {});
+
+    Array.from(document.querySelectorAll('#score-entry-body .score-input')).forEach((input) => {
+      if (input === activeInput) {
+        return;
+      }
+      const student = studentMap[String(input.dataset.studentNo || '').trim()];
+      const score = student ? getStudentScore(student, input.dataset.assignmentId) : null;
+      const nextValue = score ? String(score.rawValue || '') : '';
+      const currentValue = normalizeScoreInputValue(input.value);
+      const savedValue = normalizeScoreInputValue(input.dataset.lastSavedValue);
+      if (currentValue !== savedValue) {
+        return;
+      }
+      input.value = nextValue;
+      input.dataset.lastSavedValue = nextValue;
+      setScoreInputStatus(input, 'idle', '');
+    });
+  }
+
   function updateLatestSummaryAfterStudentNickname(result, studentNo, nickname) {
     if (result && result.summary && state.latestClassSummary) {
       state.latestClassSummary.summary = result.summary;
@@ -1995,31 +2084,74 @@ const state = {
   }
 
   function handleSaveScoreGrid() {
-    const assignment = getSelectedAssignment();
-    if (!assignment) {
-      showTeacherWarning('กรุณาเลือกงาน');
+    const changedInputs = Array.from(document.querySelectorAll('#score-entry-body .score-input')).filter((input) =>
+      normalizeScoreInputValue(input.value) !== normalizeScoreInputValue(input.dataset.lastSavedValue)
+    );
+    if (changedInputs.length === 0) {
+      showTeacherWarning('ไม่มีคะแนนที่เปลี่ยนแปลง');
       return;
     }
 
-    const entries = Array.from(document.querySelectorAll('#score-entry-body .score-input')).map((input) => ({
-      studentNo: input.dataset.studentNo,
-      score: input.value.trim(),
-    }));
-
-    setBusy('save-score-grid', true);
-    showTeacherWarning('กำลังบันทึกคะแนน...');
-    serverCall('teacherSaveAssignmentScores', [state.teacherToken, state.selectedClass, assignment.assignmentId, entries], (result) => {
-      setBusy('save-score-grid', false);
-      Array.from(document.querySelectorAll('#score-entry-body .score-input')).forEach((input) => {
-        input.dataset.lastSavedValue = normalizeScoreInputValue(input.value);
-        setScoreInputStatus(input, 'saved', 'บันทึกแล้ว');
+    const groupedEntries = changedInputs.reduce((map, input) => {
+      const assignmentId = input.dataset.assignmentId || '';
+      if (!assignmentId) {
+        return map;
+      }
+      if (!map[assignmentId]) {
+        map[assignmentId] = [];
+      }
+      map[assignmentId].push({
+        studentNo: input.dataset.studentNo,
+        score: input.value.trim(),
       });
-      showTeacherWarning(result.message || 'บันทึกคะแนนแล้ว');
+      setScoreInputStatus(input, 'saving', 'กำลังบันทึก');
+      return map;
+    }, {});
+
+    const assignmentIds = Object.keys(groupedEntries);
+    setBusy('save-score-grid', true);
+    showTeacherWarning('กำลังบันทึกคะแนน ' + changedInputs.length + ' ช่อง...');
+    saveScoreGroupsSequentially(assignmentIds, groupedEntries, 0, 0);
+  }
+
+  function saveScoreGroupsSequentially(assignmentIds, groupedEntries, index, savedCount) {
+    if (index >= assignmentIds.length) {
+      setBusy('save-score-grid', false);
+      showTeacherWarning('บันทึกคะแนนแล้ว ' + savedCount + ' ช่อง');
       loadSelectedClass();
+      return;
+    }
+
+    const assignmentId = assignmentIds[index];
+    const entries = groupedEntries[assignmentId] || [];
+    serverCall('teacherSaveAssignmentScores', [state.teacherToken, state.selectedClass, assignmentId, entries], (result) => {
+      entries.forEach((entry) => {
+        const input = findScoreInput(assignmentId, entry.studentNo);
+        if (input) {
+          input.dataset.lastSavedValue = normalizeScoreInputValue(input.value);
+          setScoreInputStatus(input, 'saved', 'บันทึกแล้ว');
+        }
+      });
+      const nextSavedCount = savedCount + entries.length;
+      updateLatestSummaryAfterAutosave(result);
+      saveScoreGroupsSequentially(assignmentIds, groupedEntries, index + 1, nextSavedCount);
     }, (error) => {
       setBusy('save-score-grid', false);
+      entries.forEach((entry) => {
+        const input = findScoreInput(assignmentId, entry.studentNo);
+        if (input) {
+          setScoreInputStatus(input, 'error', 'ยังไม่บันทึก');
+        }
+      });
       showTeacherWarning(error.message || String(error));
     });
+  }
+
+  function findScoreInput(assignmentId, studentNo) {
+    return Array.from(document.querySelectorAll('#score-entry-body .score-input')).filter((input) =>
+      String(input.dataset.assignmentId || '') === String(assignmentId || '') &&
+      String(input.dataset.studentNo || '') === String(studentNo || '')
+    )[0] || null;
   }
 
   async function handleOpenScanCamera() {
@@ -2605,8 +2737,12 @@ const state = {
   }
 
   function getSelectedAssignment() {
+    return getAssignmentById(state.selectedAssignmentId);
+  }
+
+  function getAssignmentById(assignmentId) {
     const assignments = getCurrentAssignments();
-    return assignments.find((assignment) => assignment.assignmentId === state.selectedAssignmentId) || null;
+    return assignments.find((assignment) => assignment.assignmentId === assignmentId) || null;
   }
 
   function getCurrentAssignments() {

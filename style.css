@@ -1115,50 +1115,174 @@
 
   .score-grid-wrap {
     max-height: 540px;
+    overscroll-behavior: contain;
   }
 
-  .score-grid-wrap th:first-child,
-  .score-grid-wrap td:first-child {
-    width: 72px;
-    color: var(--muted);
+  .score-sheet-table {
+    min-width: max-content;
+    width: max-content;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+
+  .score-sheet-table th,
+  .score-sheet-table td {
+    border-right: 1px solid #111827;
+    border-bottom: 1px solid #111827;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .score-sheet-table th {
+    z-index: 4;
+    color: #111827;
+  }
+
+  .score-sheet-no {
+    width: 54px;
+    min-width: 54px;
+    color: #111827;
     font-family: var(--font-number);
     text-align: center;
   }
 
-  .score-input-wrap {
-    min-height: 46px;
+  .score-sheet-name {
+    width: 360px;
+    min-width: 360px;
+  }
+
+  .score-sheet-table .score-sheet-no,
+  .score-sheet-table .score-sheet-name {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    border-right: 3px solid #111827;
+    background: #ffffff;
+  }
+
+  .score-sheet-table .score-sheet-name {
+    left: 54px;
+    z-index: 5;
+  }
+
+  .score-sheet-table thead .score-sheet-no,
+  .score-sheet-table thead .score-sheet-name {
+    z-index: 8;
+    border-bottom: 3px solid #111827;
+  }
+
+  .score-sheet-assignment {
+    width: 68px;
+    min-width: 68px;
+    height: 240px;
+    vertical-align: bottom;
+    border-top: 3px solid #111827;
+    border-bottom: 3px solid #111827;
+    background: #ffffff;
+  }
+
+  .score-sheet-assignment-button {
+    width: 100%;
+    height: 232px;
+    min-height: 0;
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 8px;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #111827;
+    box-shadow: none;
+    padding: 8px 0;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .score-sheet-assignment-button span {
+    display: block;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.1;
+  }
+
+  .score-sheet-assignment[data-selected="true"],
+  .score-sheet-score-cell[data-selected="true"],
+  .score-sheet-max[data-selected="true"] {
+    background: #edf4ff;
+  }
+
+  .score-sheet-max {
+    width: 68px;
+    min-width: 68px;
+    height: 34px;
+    background: #fbfcff;
+    color: #111827;
+    font-family: var(--font-number);
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .score-sheet-score-cell {
+    width: 68px;
+    min-width: 68px;
+    height: 48px;
+    text-align: center;
+  }
+
+  .score-input-wrap {
+    position: relative;
+    min-height: 47px;
+    display: grid;
+    place-items: stretch;
   }
 
   .score-input {
-    width: 104px;
-    min-width: 86px;
-    background: #f7f9ff;
+    width: 100%;
+    min-width: 0;
+    min-height: 47px;
+    border: 0;
+    border-radius: 0;
+    background: #ffffff;
     font-family: var(--font-number);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     text-align: center;
   }
 
   .score-input:focus {
-    background: #ffffff;
+    position: relative;
+    z-index: 2;
+    background: #f7fbff;
+    box-shadow: inset 0 0 0 2px var(--blue), var(--ring);
   }
 
   .score-save-status {
-    min-width: 70px;
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    max-width: 62px;
+    overflow: hidden;
     color: var(--muted);
     font-family: var(--font-label);
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 600;
     line-height: 1.2;
+    opacity: 0;
+    pointer-events: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .score-input-wrap[data-save-status="saving"] .score-save-status,
   .score-input-wrap[data-save-status="pending"] .score-save-status {
     color: var(--yellow);
+    opacity: 1;
   }
 
   .score-input-wrap[data-save-status="saved"] .score-save-status {
@@ -1173,6 +1297,7 @@
     border-radius: 4px;
     background: #fff0f2;
     color: var(--red);
+    opacity: 1;
     padding: 4px 6px;
   }
 
@@ -2139,6 +2264,89 @@
       min-width: 0;
       text-align: center;
       font-size: 10px;
+    }
+
+    .teacher-page .score-grid-wrap {
+      max-height: 72vh;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table {
+      display: table;
+      width: max-content;
+      min-width: max-content;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table thead {
+      display: table-header-group;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table tbody {
+      display: table-row-group;
+      width: auto;
+      min-width: 0;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table tr {
+      display: table-row;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table th,
+    .teacher-page .score-grid-wrap .score-sheet-table td {
+      display: table-cell;
+      border-right: 1px solid #111827;
+      border-bottom: 1px solid #111827;
+      padding: 0;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-no {
+      width: 48px;
+      min-width: 48px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-name {
+      left: 48px;
+      width: 230px;
+      min-width: 230px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-assignment,
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-max,
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-score-cell {
+      width: 58px;
+      min-width: 58px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-assignment {
+      height: 210px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-assignment-button {
+      height: 204px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-assignment-button span {
+      font-size: 15px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-input {
+      width: 100%;
+      min-height: 46px;
+      font-size: 16px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-save-status {
+      width: auto;
+      max-width: 52px;
+      text-align: right;
+      font-size: 8px;
     }
 
     .teacher-page .teacher-student-name-cell {
