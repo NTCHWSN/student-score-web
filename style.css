@@ -1217,6 +1217,8 @@
   }
 
   .score-sheet-max {
+    top: 240px;
+    z-index: 4;
     width: 68px;
     min-width: 68px;
     height: 34px;
@@ -2326,6 +2328,10 @@
 
     .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-assignment {
       height: 210px;
+    }
+
+    .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-max {
+      top: 210px;
     }
 
     .teacher-page .score-grid-wrap .score-sheet-table .score-sheet-assignment-button {
